@@ -15,7 +15,7 @@ This guide explains how to deploy the NeuroLab EEG Analysis platform using Docke
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/neurolab_model.git
+git clone https://github.com/neurolab/neurolab_model.git
 cd neurolab_model
 
 # Copy environment template
