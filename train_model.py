@@ -40,9 +40,17 @@ def prepare_training_data(data_path: str):
         # Load data using pandas
         df = pd.read_csv(data_path)
         
+        # Check dataset size
+        logger.info(f"Dataset size: {len(df)} samples")
+        if len(df) < 50:
+            logger.warning(f"Dataset is very small ({len(df)} samples). Consider using more data for better results.")
+        
         # Extract features and labels
         X = df[['alpha', 'beta', 'theta', 'delta', 'gamma']].values
         y = df['state'].values
+        
+        logger.info(f"Features shape: {X.shape}, Labels shape: {y.shape}")
+        logger.info(f"Class distribution: {np.bincount(y)}")
         
         # Normalize features
         X_mean = np.mean(X, axis=0)
@@ -55,6 +63,8 @@ def prepare_training_data(data_path: str):
         X_test = X_normalized[split_idx:]
         y_train = y[:split_idx]
         y_test = y[split_idx:]
+        
+        logger.info(f"Training samples: {len(X_train)}, Test samples: {len(X_test)}")
         
         # Reshape for CNN
         X_train = X_train.reshape(-1, X_train.shape[1], 1)
@@ -72,6 +82,10 @@ def train_model(data_path: str, model_save_path: str):
         logger.info("Preparing training data...")
         X_train, X_test, y_train, y_test = prepare_training_data(data_path)
         
+        # Adjust batch size based on dataset size
+        batch_size = min(32, max(1, len(X_train) // 4))
+        logger.info(f"Using batch size: {batch_size}")
+        
         # Create and train model
         logger.info("Creating model...")
         model = create_model(input_shape=(X_train.shape[1], 1))
@@ -80,7 +94,7 @@ def train_model(data_path: str, model_save_path: str):
         history = model.fit(
             X_train, y_train,
             epochs=50,
-            batch_size=32,
+            batch_size=batch_size,
             validation_data=(X_test, y_test),
             verbose=1
         )
@@ -88,6 +102,13 @@ def train_model(data_path: str, model_save_path: str):
         # Evaluate model
         test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
         logger.info(f"Test accuracy: {test_acc:.4f}")
+        logger.info(f"Test loss: {test_loss:.4f}")
+        
+        # Make predictions to see what the model is outputting
+        predictions = model.predict(X_test, verbose=0)
+        predicted_classes = np.argmax(predictions, axis=1)
+        logger.info(f"Predicted classes: {predicted_classes}")
+        logger.info(f"Actual classes: {y_test}")
         
         # Save model
         os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
