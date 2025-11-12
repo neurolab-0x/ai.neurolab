@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # NeuroLab API Service
+  neurolab-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neurolab-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=${MONGODB_URL:-mongodb://mongodb:27017}
+      - INFLUXDB_URL=${INFLUXDB_URL:-http://influxdb:8086}
+      - INFLUXDB_TOKEN=${INFLUXDB_TOKEN:-your-token-here}
+      - INFLUXDB_ORG=${INFLUXDB_ORG:-neurolab}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET:-eeg_data}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+      - ./processed:/app/processed
+      - ./logs:/app/logs
+      - ./test_data:/app/test_data
+    depends_on:
+      - mongodb
+      - influxdb
+    networks:
+      - neurolab-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MongoDB Service
+  mongodb:
+    image: mongo:7.0
+    container_name: neurolab-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-admin123}
+      - MONGO_INITDB_DATABASE=neurolab
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
+    networks:
+      - neurolab-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # InfluxDB Service
+  influxdb:
+    image: influxdb:2.7
+    container_name: neurolab-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_ADMIN_USER:-admin}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_ADMIN_PASSWORD:-admin123456}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG:-neurolab}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET:-eeg_data}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN:-your-super-secret-token}
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    networks:
+      - neurolab-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: neurolab-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - neurolab-api
+    networks:
+      - neurolab-network
+    restart: unless-stopped
+
+volumes:
+  mongodb-data:
+    driver: local
+  mongodb-config:
+    driver: local
+  influxdb-data:
+    driver: local
+  influxdb-config:
+    driver: local
+
+networks:
+  neurolab-network:
+    driver: bridge
