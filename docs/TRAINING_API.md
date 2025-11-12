@@ -141,10 +141,10 @@ Train a model from an uploaded CSV file.
 
 **CSV Format:**
 ```csv
-timestamp,alpha,beta,theta,delta,gamma,state
-2024-01-15T10:00:00,0.5,0.3,0.2,0.1,0.4,0
-2024-01-15T10:00:01,0.6,0.4,0.3,0.2,0.5,1
-```
+alpha,beta,theta,delta,gamma,state,confidence,timestamp,metadata
+0.647,0.080,0.219,0.132,0.117,0,0.869,2025-11-12T07:07:28.116583,"{""device"":""synthetic"",""signal_quality"":0.87}"
+0.407,0.424,0.290,0.300,0.153,1,0.830,2025-11-12T07:07:29.116583,"{""device"":""synthetic"",""signal_quality"":0.83}"
+0.502,0.266,0.323,0.278,0.176,1,0.769,2025-11-12T07:07:30.116583,"{""device"":""synthetic"",""signa
 
 **Response:**
 ```json
