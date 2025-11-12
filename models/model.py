@@ -15,14 +15,41 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l1_l2
 import numpy as np
-from models.save_trained_model import save_trained_model
 from tensorflow.keras import Sequential
 import tensorflow as tf
 import math
 import time
 import os
+import logging
 from datetime import datetime
 from utils.influxdb_client import InfluxDBManager
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+def save_trained_model(model, model_path):
+    """
+    Save trained model to disk.
+    
+    Parameters:
+    -----------
+    model : Keras model
+        Trained model to save
+    model_path : str
+        Path where the model should be saved
+    """
+    try:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        
+        # Save the model
+        model.save(model_path)
+        logger.info(f"Model successfully saved to {model_path}")
+        
+    except Exception as e:
+        logger.error(f"Error saving model: {str(e)}")
+        raise
 
 def cosine_annealing_schedule(epoch, lr):
     """Cosine annealing learning rate schedule."""
@@ -209,14 +236,15 @@ def train_hybrid_model(X_train, y_train, model_type='enhanced_cnn_lstm', **kwarg
         Trained model
     """
     
-    dropout_rate = kwargs.gate', 0.3)
+    # Extract parameters with defaults
+    dropout_rate = kwargs.get('dropout_rate', 0.3)
     learning_rate = kwargs.get('learning_rate', 0.001)
     batch_size = kwargs.get('batch_size', 32)
     epochs = kwargs.get('epochs', 30)
-    rue)
-    use_relative_pos = kwargs.get('use_relative
-    l1_reg = kwargs.get('l1_reg', 1e-)
-    l2_reg = kwargs.get('l2_reg', 1)e-45 True)',_pos, T_separable'et('useargs.grable = kwuse_sepa'dropout_ret(ultss with defaerrametxtract pa# El)ionaon (optthe sessifor ier ntifque ideni (optionalject for the subifiere identl)na(optioon uratiigft: 1e-faul (dectorization faar2 regul L_reg:    - l2lt: Truing (defauncodal et: Trueefaullutions (donvo: faulths (deepoc2)efault: 3e (dBatch siz_size: batch   -   0.te (default:g raLearnin: earning_rate
+    use_separable = kwargs.get('use_separable', True)
+    use_relative_pos = kwargs.get('use_relative_pos', True)
+    l1_reg = kwargs.get('l1_reg', 1e-5)
+    l2_reg = kwargs.get('l2_reg', 1e-4)
     
     # InfluxDB configuration
     influxdb_config = kwargs.get('influxdb_config')
@@ -483,62 +511,94 @@ def evaluate_model(model, X_test, y_test, calibrate=True, **kwargs):
     calibration_metrics = {}
     if calibrate:
         try:
-            from utils.interpretability import ModelInterpretability
+            from sklearn.isotonic import IsotonicRegression
+            from sklearn.linear_model import LogisticRegression
             
             # Split test set into calibration and evaluation
             n_calib = int(0.3 * len(X_test))
             X_calib, X_eval = X_test[:n_calib], X_test[n_calib:]
             y_calib, y_eval = y_test[:n_calib], y_test[n_calib:]
             
-            # Create interpretability handler
-            interpreter = ModelInterpretability(model)
+            # Get uncalibrated predictions
+            uncal_preds_calib = model.predict(X_calib)
+            uncal_preds_eval = model.predict(X_eval)
             
-            # Calibrate confidence with temperature scaling
-            cal_results = interpreter.calibrate_confidence(
-                X_calib, y_calib, 
-                method='temperature_scaling',
-                n_bins=10
-            )
+            # Calculate ECE before calibration
+            def calculate_ece(probs, labels, n_bins=10):
+                """Calculate Expected Calibration Error"""
+                confidences = np.max(probs, axis=1)
+                predictions = np.argmax(probs, axis=1)
+                accuracies = (predictions == labels).astype(float)
+                
+                bin_boundaries = np.linspace(0, 1, n_bins + 1)
+                ece = 0.0
+                
+                for i in range(n_bins):
+                    bin_mask = (confidences >= bin_boundaries[i]) & (confidences < bin_boundaries[i + 1])
+                    if np.sum(bin_mask) > 0:
+                        bin_accuracy = np.mean(accuracies[bin_mask])
+                        bin_confidence = np.mean(confidences[bin_mask])
+                        ece += np.sum(bin_mask) * np.abs(bin_accuracy - bin_confidence)
+                
+                return ece / len(labels)
             
-            if "error" not in cal_results:
-                # Get calibrated predictions
-                cal_preds = interpreter.predict_with_calibration(X_eval)
+            before_ece = calculate_ece(uncal_preds_eval, y_eval)
+            
+            # Temperature scaling calibration
+            temperature = 1.0
+            best_temp = 1.0
+            best_nll = float('inf')
+            
+            for temp in np.linspace(0.1, 5.0, 50):
+                scaled_logits = uncal_preds_calib / temp
+                scaled_probs = np.exp(scaled_logits) / np.sum(np.exp(scaled_logits), axis=1, keepdims=True)
                 
-                # Calculate calibration metrics
-                uncal_preds = model.predict(X_eval)
-                before_ece = interpreter._expected_calibration_error(uncal_preds, y_eval)
-                after_ece = interpreter._expected_calibration_error(cal_preds["probabilities"], y_eval)
+                # Calculate negative log likelihood
+                nll = -np.mean(np.log(scaled_probs[np.arange(len(y_calib)), y_calib] + 1e-10))
                 
-                # Calculate calibrated accuracy
-                cal_y_pred = cal_preds["predictions"]
-                cal_accuracy = accuracy_score(y_eval, cal_y_pred)
-                
-                calibration_metrics = {
-                    "temperature": float(cal_results.get("temperature", 1.0)),
-                    "ece_before": float(before_ece),
-                    "ece_after": float(after_ece),
-                    "calibrated_accuracy": float(cal_accuracy),
-                    "improvement_percent": float((after_ece - before_ece) / before_ece * -100) 
-                                        if before_ece > 0 else 0.0
-                }
-                
-                # Log calibration metrics to InfluxDB if configured
-                if influxdb_manager:
-                    influxdb_manager.write_personalized_metrics(
-                        metrics=calibration_metrics,
-                        timestamp=datetime.now(),
-                        subject_id=subject_id,
-                        session_id=session_id
-                    )
-                
-                print(f"Confidence calibration:")
-                print(f"  - ECE before: {before_ece:.4f}")
-                print(f"  - ECE after: {after_ece:.4f}")
-                print(f"  - Improvement: {calibration_metrics['improvement_percent']:.1f}%")
-            else:
-                print(f"Calibration error: {cal_results['error']}")
+                if nll < best_nll:
+                    best_nll = nll
+                    best_temp = temp
+            
+            temperature = best_temp
+            
+            # Apply temperature scaling to evaluation set
+            cal_preds_eval = uncal_preds_eval / temperature
+            cal_preds_eval = np.exp(cal_preds_eval) / np.sum(np.exp(cal_preds_eval), axis=1, keepdims=True)
+            
+            # Calculate ECE after calibration
+            after_ece = calculate_ece(cal_preds_eval, y_eval)
+            
+            # Calculate calibrated accuracy
+            cal_y_pred = np.argmax(cal_preds_eval, axis=1)
+            cal_accuracy = accuracy_score(y_eval, cal_y_pred)
+            
+            calibration_metrics = {
+                "temperature": float(temperature),
+                "ece_before": float(before_ece),
+                "ece_after": float(after_ece),
+                "calibrated_accuracy": float(cal_accuracy),
+                "improvement_percent": float((before_ece - after_ece) / before_ece * 100) 
+                                    if before_ece > 0 else 0.0
+            }
+            
+            # Log calibration metrics to InfluxDB if configured
+            if influxdb_manager:
+                influxdb_manager.write_personalized_metrics(
+                    metrics=calibration_metrics,
+                    timestamp=datetime.now(),
+                    subject_id=subject_id,
+                    session_id=session_id
+                )
+            
+            print(f"\nConfidence calibration:")
+            print(f"  - Temperature: {temperature:.4f}")
+            print(f"  - ECE before: {before_ece:.4f}")
+            print(f"  - ECE after: {after_ece:.4f}")
+            print(f"  - Improvement: {calibration_metrics['improvement_percent']:.1f}%")
+            
         except Exception as e:
-            print(f"Could not calibrate confidence: {e}")
+            logger.warning(f"Could not calibrate confidence: {e}")
     
     # Print results
     print(f"Model Accuracy: {accuracy:.4f}")
