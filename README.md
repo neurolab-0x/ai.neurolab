@@ -84,11 +84,11 @@ import requests
 
 # Upload EEG file for analysis
 files = {'file': open('your_eeg_file.csv', 'rb')}
-response = requests.post('http://neurai/upload', files=files)
+response = requests.post('https://model.neurolab.cc/upload', files=files)
 
 # Real-time processing
 data = {'eeg_data': your_eeg_data}
-response = requests.post('http://neurai/realtime', json=data)
+response = requests.post('https://model.neurolab.cc/realtime', json=data)
 ```
 
 ## 📚 API Documentation
@@ -167,7 +167,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-AI Model Maintainer - [Mugisha Prosper](mailto:polo1.mugisha@gmail.com)
+AI Model Maintainer - [Mugisha Prosper](mailto:nelsonprox92@gmail.com)
 
 Project Link: [Neurolabs Inc](https://neurolab.cc)
 
@@ -250,7 +250,7 @@ A FastAPI-based server for processing EEG data and detecting neurological events
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/neurolab-0x/ai.neurolab.git neurolab_model
 cd neurolab_model
 ```
 
@@ -310,7 +310,3 @@ The application uses:
 - Motor for async MongoDB operations
 - InfluxDB Client for time-series data
 - Pydantic for data validation
-
-## License
-
-[Your License Here]

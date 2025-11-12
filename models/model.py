@@ -114,9 +114,71 @@ def attention_lstm_layer(x, units, dropout_rate=0.3):
     
     return context
 
+def get_channel_config(num_channels):
+    """
+    Get optimal model configuration based on number of EEG channels.
+    
+    Parameters:
+    -----------
+    num_channels : int
+        Number of EEG channels (8, 16, 32, or 64)
+    
+    Returns:
+    --------
+    dict : Configuration parameters for the model
+    """
+    configs = {
+        8: {
+            'conv_filters': [32, 64, 128],
+            'lstm_units': 64,
+            'dense_units': 128,
+            'attention_heads': 4,
+            'embed_dim': 64,
+            'ff_dim': 128,
+            'description': '8-channel configuration (minimal setup)'
+        },
+        16: {
+            'conv_filters': [64, 128, 256],
+            'lstm_units': 128,
+            'dense_units': 256,
+            'attention_heads': 8,
+            'embed_dim': 128,
+            'ff_dim': 256,
+            'description': '16-channel configuration (standard setup)'
+        },
+        32: {
+            'conv_filters': [128, 256, 512],
+            'lstm_units': 256,
+            'dense_units': 512,
+            'attention_heads': 8,
+            'embed_dim': 256,
+            'ff_dim': 512,
+            'description': '32-channel configuration (high-density setup)'
+        },
+        64: {
+            'conv_filters': [256, 512, 1024],
+            'lstm_units': 512,
+            'dense_units': 1024,
+            'attention_heads': 16,
+            'embed_dim': 512,
+            'ff_dim': 1024,
+            'description': '64-channel configuration (ultra-high-density setup)'
+        }
+    }
+    
+    if num_channels not in configs:
+        # Find closest supported configuration
+        supported = sorted(configs.keys())
+        closest = min(supported, key=lambda x: abs(x - num_channels))
+        logger.warning(f"Channel count {num_channels} not directly supported. Using {closest}-channel configuration.")
+        return configs[closest]
+    
+    return configs[num_channels]
+
 def train_hybrid_model(X_train, y_train, model_type='enhanced_cnn_lstm', **kwargs):
     """
     Enhanced hybrid model training with improved architectures and training features.
+    Supports 8, 16, 32, and 64 channel configurations.
     
     Parameters:
     -----------
@@ -128,32 +190,33 @@ def train_hybrid_model(X_train, y_train, model_type='enhanced_cnn_lstm', **kwarg
         Type of model to use
     kwargs : dict
         Additional parameters:
+        - num_channels: Number of EEG channels (8, 16, 32, or 64) (default: auto-detect)
         - dropout_rate: Dropout rate (default: 0.3)
-        - learning_rate: Learning rate (default: 0.001)
-        - batch_size: Batch size (default: 32)
-        - epochs: Number of epochs (default: 30)
-        - use_separable: Whether to use separable convolutions (default: True)
-        - use_relative_pos: Whether to use relative positional encoding (default: True)
+        - l001)
+    
+        - epochs: Number of 30)
+        - use_separable: Whether to use separable c)
+        - use_relative_pos: Whether to use relative positione)
         - l1_reg: L1 regularization factor (default: 1e-5)
-        - l2_reg: L2 regularization factor (default: 1e-4)
-        - influxdb_config: Dict containing InfluxDB configuration (optional)
-        - subject_id: Unique identifier for the subject (optional)
-        - session_id: Unique identifier for the session (optional)
+    4)
+        - influxdb_config: Dict containing InfluxDB con
+        - subject_id: Uniqu)
+        - session_id: U
     
     Returns:
     --------
     model : Keras model
         Trained model
     """
-    # Extract parameters with defaults
-    dropout_rate = kwargs.get('dropout_rate', 0.3)
+    
+    dropout_rate = kwargs.gate', 0.3)
     learning_rate = kwargs.get('learning_rate', 0.001)
     batch_size = kwargs.get('batch_size', 32)
     epochs = kwargs.get('epochs', 30)
-    use_separable = kwargs.get('use_separable', True)
-    use_relative_pos = kwargs.get('use_relative_pos', True)
-    l1_reg = kwargs.get('l1_reg', 1e-5)
-    l2_reg = kwargs.get('l2_reg', 1e-4)
+    rue)
+    use_relative_pos = kwargs.get('use_relative
+    l1_reg = kwargs.get('l1_reg', 1e-)
+    l2_reg = kwargs.get('l2_reg', 1)e-45 True)',_pos, T_separable'et('useargs.grable = kwuse_sepa'dropout_ret(ultss with defaerrametxtract pa# El)ionaon (optthe sessifor ier ntifque ideni (optionalject for the subifiere identl)na(optioon uratiigft: 1e-faul (dectorization faar2 regul L_reg:    - l2lt: Truing (defauncodal et: Trueefaullutions (donvo: faulths (deepoc2)efault: 3e (dBatch siz_size: batch   -   0.te (default:g raLearnin: earning_rate
     
     # InfluxDB configuration
     influxdb_config = kwargs.get('influxdb_config')
