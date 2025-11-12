@@ -14,6 +14,16 @@ from utils.file_handler import validate_file, save_uploaded_file
 from utils.model_manager import ModelManager
 from utils.ml_processor import MLProcessor
 
+# Import API routers
+from api.training import router as training_router
+from api.auth import router as auth_router
+try:
+    from api.streaming_endpoint import router as streaming_router
+    STREAMING_AVAILABLE = True
+except ImportError:
+    STREAMING_AVAILABLE = False
+    logger.warning("Streaming endpoint not available")
+
 # Configure logging
 logging.basicConfig(
     level=logging.DEBUG,
@@ -52,6 +62,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include API routers
+app.include_router(training_router, tags=["Training"])
+app.include_router(auth_router, tags=["Authentication"])
+if STREAMING_AVAILABLE:
+    app.include_router(streaming_router, tags=["Streaming"])
 
 @app.get("/health")
 async def health_check():
