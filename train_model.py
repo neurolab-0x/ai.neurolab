@@ -124,8 +124,8 @@ def train_model(data_path: str, model_save_path: str):
 def main():
     """Main training script"""
     try:
-        # Use sample data for training
-        data_path = "test_data/sample_eeg.csv"
+        # Use training data
+        data_path = "test_data/training_eeg.csv"
         model_save_path = "processed/trained_model.h5"
         
         logger.info(f"Starting model training with data from {data_path}")
@@ -134,6 +134,8 @@ def main():
         # Print training summary
         logger.info("Training completed successfully")
         logger.info(f"Final model saved to {model_save_path}")
+        logger.info(f"Final training accuracy: {history.history['accuracy'][-1]:.4f}")
+        logger.info(f"Final validation accuracy: {history.history['val_accuracy'][-1]:.4f}")
         
     except Exception as e:
         logger.error(f"Training failed: {str(e)}")
