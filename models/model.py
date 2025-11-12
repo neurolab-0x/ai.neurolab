@@ -219,21 +219,23 @@ def train_hybrid_model(X_train, y_train, model_type='enhanced_cnn_lstm', **kwarg
         Additional parameters:
         - num_channels: Number of EEG channels (8, 16, 32, or 64) (default: auto-detect)
         - dropout_rate: Dropout rate (default: 0.3)
-        - l001)
-    
-        - epochs: Number of 30)
-        - use_separable: Whether to use separable c)
-        - use_relative_pos: Whether to use relative positione)
+        - learning_rate: Learning rate (default: 0.001)
+        - batch_size: Batch size (default: 32)
+        - epochs: Number of epochs (default: 30)
+        - use_separable: Whether to use separable convolutions (default: True)
+        - use_relative_pos: Whether to use relative positional encoding (default: True)
         - l1_reg: L1 regularization factor (default: 1e-5)
-    4)
-        - influxdb_config: Dict containing InfluxDB con
-        - subject_id: Uniqu)
-        - session_id: U
+        - l2_reg: L2 regularization factor (default: 1e-4)
+        - influxdb_config: Dict containing InfluxDB configuration (optional)
+        - subject_id: Unique identifier for the subject (optional)
+        - session_id: Unique identifier for the session (optional)
     
     Returns:
     --------
     model : Keras model
         Trained model
+    history : History object
+        Training history
     """
     
     # Extract parameters with defaults
