@@ -1,79 +1,107 @@
-# Web Framework and Server
+# ============================================
+# NeuroLab EEG Analysis Platform Dependencies
+# ============================================
+
+# ============================================
+# Core Web Framework and Server
+# ============================================
 fastapi==0.109.2
-uvicorn==0.27.1
+uvicorn[standard]==0.27.1
 pydantic==2.6.1
+pydantic-settings>=2.0.0
 python-multipart==0.0.18
 python-dotenv==1.0.1
 
-# Database
+# ============================================
+# Database Clients
+# ============================================
 influxdb-client==1.38.0
 pymongo==4.6.3
 motor==3.3.1  # Async MongoDB driver
 
+# ============================================
 # Data Processing and Analysis
+# ============================================
 numpy==1.26.4
 pandas==2.2.0
-scipy>=1.7.0
-mne>=0.24.0  # For EEG data processing
-pyedflib>=0.1.28  # For EDF file support
-biosignalsnotebooks>=0.6.7  # For BDF file support
-antropy>=0.1.4  # Enhanced entropy metrics for EEG
-PyWavelets>=1.3.0
-torch>=1.9.0
-transformers>=4.11.0
-dataclasses>=0.6
+scipy>=1.12.0
+mne>=1.5.0  # For EEG data processing
+pyedflib>=0.1.36  # For EDF file support
+antropy>=0.1.6  # Enhanced entropy metrics for EEG
+PyWavelets>=1.4.1
 python-dateutil>=2.8.2
 
-# Machine Learning
+# ============================================
+# Machine Learning and Deep Learning
+# ============================================
 scikit-learn==1.5.0
-imbalanced-learn==0.10.1  # Compatible with scikit-learn 1.2.2
-tensorflow>=2.16.1  # Updated to latest stable version
-keras>=2.16.1  # Updated to match TensorFlow version
-joblib>=1.1.0,<2.0.0
-streamlit>=1.0.0
+imbalanced-learn==0.12.0
+tensorflow>=2.16.1
+keras>=3.0.0
+joblib>=1.3.0
+tqdm>=4.66.0  # Progress bars
 
+# ============================================
 # Model Interpretability
-shap==0.44.0  # For SHAP feature importance
-lime==0.2.0.1  # For local model explanations
+# ============================================
+shap==0.44.1
+lime==0.2.0.1
 matplotlib==3.8.3
+seaborn>=0.13.0
+plotly>=5.18.0
 
+# ============================================
 # Signal Processing
-statsmodels>=0.13.0,<1.0.0
-pywavelets>=1.2.0  # For wavelet analysis
+# ============================================
+statsmodels>=0.14.0
+pywt>=1.4.1  # PyWavelets (alternative import name)
 
-# Visualization
-seaborn>=0.11.2
-plotly>=5.3.0
+# ============================================
+# HTTP Clients and Async
+# ============================================
+requests>=2.31.0
+aiofiles>=23.2.0
+httpx>=0.26.0
 
-requests>=2.26.0,<3.0.0
-aiofiles>=0.8.0,<1.0.0
-httpx>=0.19.0,<1.0.0
+# ============================================
+# Security and Authentication
+# ============================================
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+pyjwt>=2.8.0
+cryptography>=42.0.0
+argon2-cffi>=23.1.0
+email-validator>=2.1.0
+itsdangerous>=2.1.2
 
-pytest>=6.2.5,<7.0.0
-pytest-asyncio>=0.16.0,<1.0.0
-
+# ============================================
 # Monitoring and Logging
-python-json-logger>=2.0.2,<3.0.0
-prometheus-client>=0.11.0,<1.0.0
+# ============================================
+python-json-logger>=2.0.7
+prometheus-client>=0.19.0
 
-# Security
-python-jose==3.4.0
-passlib==1.7.4
-pyjwt>=2.4.0,<3.0.0  # JWT token handling
-cryptography>=38.0.0  # For encryption operations
-argon2-cffi>=21.3.0  # Stronger password hashing
-ratelimiter>=0.3.0  # API rate limiting
-email-validator>=1.3.0  # Email validation for user registration
-itsdangerous>=2.1.2  # Secure signed data
-PyNaCl>=1.5.0  # High-level cryptographic library
+# ============================================
+# Testing Framework
+# ============================================
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-xdist>=3.5.0
+pytest-timeout>=2.2.0
+pytest-benchmark>=4.0.0
+coverage>=7.4.0
 
-# Security Tools & Hardening
-bandit>=1.7.4  # Security linter for Python code
-safety>=2.3.0  # Dependency vulnerability scanner
+# ============================================
+# Development and Security Tools
+# ============================================
+bandit>=1.7.6
+safety>=3.0.0
 
-# Testing dependencies
-pytest-cov>=2.12.0
-pytest-xdist>=2.4.0
-pytest-timeout>=2.1.0
-pytest-benchmark>=3.4.0
-coverage>=6.0.0
+# ============================================
+# Optional: Streaming and Advanced Features
+# ============================================
+# Uncomment if using these features
+# streamlit>=1.30.0  # For web dashboards
+# torch>=2.1.0  # For PyTorch models
+# transformers>=4.36.0  # For transformer models
+# biosignalsnotebooks>=0.6.7  # For BDF file support
