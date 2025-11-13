@@ -1,0 +1,747 @@
+# NeuroLab EEG Analysis API Documentation
+
+## Table of Contents
+- [Overview](#overview)
+- [Authentication](#authentication)
+- [Base URL](#base-url)
+- [Common Response Formats](#common-response-formats)
+- [Error Handling](#error-handling)
+- [API Endpoints](#api-endpoints)
+  - [Health & Status](#health--status)
+  - [Authentication Endpoints](#authentication-endpoints)
+  - [EEG Data Processing](#eeg-data-processing)
+  - [Real-time Streaming](#real-time-streaming)
+  - [Model Training](#model-training)
+  - [Model Management](#model-management)
+- [Data Models](#data-models)
+- [Rate Limiting](#rate-limiting)
+- [Examples](#examples)
+
+---
+
+## Overview
+
+The NeuroLab EEG Analysis API provides endpoints for processing EEG (Electroencephalogram) data, real-time mental state classification, model training, and user authentication. The API uses RESTful principles and returns JSON responses.
+
+**Version:** 1.0.0  
+**API Type:** REST  
+**Content-Type:** application/json
+
+---
+
+## Authentication
+
+Most endpoints require JWT (JSON Web Token) authentication. Include the token in the Authorization header:
+
+```
+Authorization: Bearer <your_jwt_token>
+```
+
+### Token Expiry
+- **Access Token:** 24 hours
+- **Refresh Token:** 30 days
+
+---
+
+## Base URL
+
+```
+Production: https://model.neurolab.cc
+Development: http://localhost:8000
+```
+
+---
+
+## Common Response Formats
+
+### Success Response
+```json
+{
+  "status": "success",
+  "data": { ... },
+  "timestamp": "2025-11-13T10:30:00Z"
+}
+```
+
+### Error Response
+```json
+{
+  "status": "error",
+  "detail": "Error message description",
+  "error_code": "ERROR_CODE",
+  "timestamp": "2025-11-13T10:30:00Z"
+}
+```
+
+---
+
+## Error Handling
+
+### HTTP Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 201 | Created |
+| 202 | Accepted (async operation) |
+| 400 | Bad Request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not Found |
+| 409 | Conflict |
+| 422 | Validation Error |
+| 429 | Too Many Requests |
+| 500 | Internal Server Error |
+| 503 | Service Unavailable |
+
+---
+
+## API Endpoints
+
+### Health & Status
+
+#### GET /health
+Check API health status and diagnostics.
+
+**Authentication:** Not required
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "diagnostics": {
+    "model_loaded": true,
+    "tensorflow_available": true
+  }
+}
+```
+
+#### GET /
+Get API information and available endpoints.
+
+**Authentication:** Not required
+
+**Response:**
+```json
+{
+  "name": "NeuroLab EEG Analysis API",
+  "version": "1.0.0",
+  "description": "API for EEG signal processing and mental state classification",
+  "endpoints": {
+    "health": "/health",
+    "upload": "/upload",
+    "analyze": "/analyze",
+    "calibrate": "/calibrate",
+    "recommendations": "/recommendations"
+  }
+}
+```
+
+---
+
+### Authentication Endpoints
+
+#### POST /api/auth/login
+Authenticate user and receive access tokens.
+
+**Authentication:** Not required
+
+**Request Body:**
+```json
+{
+  "username": "string (3-50 chars, alphanumeric)",
+  "password": "string (8-100 chars)"
+}
+```
+
+**Response (200):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "random_secure_token_string",
+  "token_type": "bearer",
+  "expires_in": 86400,
+  "user_info": {
+    "username": "user",
+    "roles": ["user"]
+  }
+}
+```
+
+**Errors:**
+- 401: Invalid username or password
+- 422: Validation error
+
+---
+
+#### POST /api/auth/refresh
+Refresh access token using refresh token.
+
+**Authentication:** Not required
+
+**Request Body:**
+```json
+{
+  "refresh_token": "your_refresh_token"
+}
+```
+
+**Response (200):**
+```json
+{
+  "access_token": "new_access_token",
+  "refresh_token": "new_refresh_token",
+  "token_type": "bearer",
+  "expires_in": 86400,
+  "user_info": {
+    "username": "user",
+    "roles": ["user"]
+  }
+}
+```
+
+**Errors:**
+- 401: Invalid or expired refresh token
+
+---
+
+#### POST /api/auth/logout
+Logout and invalidate refresh tokens.
+
+**Authentication:** Required (Bearer token)
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+refresh_token: <refresh_token> (optional)
+```
+
+**Response (200):**
+```json
+{
+  "status": "success",
+  "message": "Logged out successfully"
+}
+```
+
+---
+
+#### POST /api/auth/users
+Create a new user (Admin only).
+
+**Authentication:** Required (Admin role)
+
+**Request Body:**
+```json
+{
+  "username": "string (3-50 chars)",
+  "password": "string (8-100 chars)",
+  "roles": ["user"] // or ["user", "admin"]
+}
+```
+
+**Response (201):**
+```json
+{
+  "username": "newuser",
+  "roles": ["user"],
+  "created_at": "2025-11-13T10:30:00Z"
+}
+```
+
+**Errors:**
+- 403: Insufficient permissions
+- 409: Username already exists
+
+---
+
+### EEG Data Processing
+
+#### POST /upload
+Upload and process EEG file or JSON data.
+
+**Authentication:** Optional (recommended)
+
+**Request (File Upload):**
+```
+Content-Type: multipart/form-data
+
+file: <eeg_file.csv>
+encrypt_response: false (optional, boolean)
+```
+
+**Request (JSON Data):**
+```json
+{
+  "alpha": 0.5,
+  "beta": 0.3,
+  "theta": 0.2,
+  "delta": 0.1,
+  "gamma": 0.4,
+  "subject_id": "subject_001",
+  "session_id": "session_001"
+}
+```
+
+**Response (200):**
+```json
+{
+  "status": "success",
+  "state_label": "Relaxed",
+  "dominant_state": 0,
+  "confidence": 85.5,
+  "state_percentages": {
+    "0": 60.0,
+    "1": 25.0,
+    "2": 15.0
+  },
+  "cognitive_metrics": {
+    "attention_score": 0.75,
+    "stress_level": 0.15,
+    "relaxation_index": 0.85
+  },
+  "recommendations": [
+    {
+      "type": "relaxation",
+      "message": "Maintain current relaxation state",
+      "priority": "low"
+    }
+  ],
+  "temporal_analysis": {
+    "total_samples": 100,
+    "state_transitions": 5,
+    "average_state_duration": 20.0
+  }
+}
+```
+
+---
+
+#### POST /analyze
+Analyze EEG data and return detailed results.
+
+**Authentication:** Optional
+
+**Request Body:**
+```json
+{
+  "alpha": 0.5,
+  "beta": 0.3,
+  "theta": 0.2,
+  "delta": 0.1,
+  "gamma": 0.4,
+  "subject_id": "subject_001",
+  "session_id": "session_001"
+}
+```
+
+**Response (200):**
+```json
+{
+  "status": "success",
+  "state_label": "Focused",
+  "dominant_state": 1,
+  "confidence": 92.3,
+  "state_percentages": {
+    "0": 15.0,
+    "1": 70.0,
+    "2": 15.0
+  },
+  "cognitive_metrics": {
+    "attention_score": 0.92,
+    "stress_level": 0.20,
+    "relaxation_index": 0.30
+  },
+  "recommendations": [
+    {
+      "type": "attention",
+      "message": "Excellent focus detected",
+      "priority": "info"
+    }
+  ]
+}
+```
+
+---
+
+### Real-time Streaming
+
+#### POST /api/stream
+Stream EEG data for real-time processing.
+
+**Authentication:** Required (User role)
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+X-Client-ID: <client_identifier> (optional)
+```
+
+**Request Body:**
+```json
+{
+  "eeg_data": [
+    [0.5, 0.3, 0.2, 0.1, 0.4],
+    [0.6, 0.4, 0.3, 0.2, 0.5],
+    [0.4, 0.2, 0.1, 0.05, 0.3]
+  ],
+  "client_id": "client_001",
+  "model_type": "enhanced_cnn_lstm",
+  "clean_artifacts": true,
+  "encrypt_response": false,
+  "include_interpretability": false
+}
+```
+
+**Validation Rules:**
+- `eeg_data`: Max 64 channels, max 10,000 samples per channel
+- Max amplitude: ±1000 μV
+- No NaN or Inf values allowed
+
+**Response (200):**
+```json
+{
+  "predicted_states": [0, 1, 0],
+  "dominant_state": 0,
+  "confidence": 87.5,
+  "processing_time_ms": 45.2,
+  "timestamp": "2025-11-13T10:30:00Z",
+  "encrypted": false,
+  "interpretability": {
+    "method": "lime",
+    "feature_importance": {
+      "alpha": 0.35,
+      "beta": 0.25,
+      "theta": 0.20,
+      "delta": 0.10,
+      "gamma": 0.10
+    },
+    "predicted_class": 0
+  }
+}
+```
+
+**Encrypted Response (when encrypt_response=true):**
+```json
+{
+  "encrypted": true,
+  "metadata": {
+    "dominant_state": 0,
+    "confidence": 87.5,
+    "timestamp": "2025-11-13T10:30:00Z"
+  },
+  "data": "base64_encoded_encrypted_data"
+}
+```
+
+**Errors:**
+- 400: Invalid EEG data format or values
+- 401: Authentication required
+- 429: Rate limit exceeded
+
+---
+
+#### POST /api/stream/clear
+Clear client stream buffer.
+
+**Authentication:** Required (User role)
+
+**Request Body:**
+```json
+{
+  "client_id": "client_001"
+}
+```
+
+**Response (200):**
+```json
+{
+  "status": "success",
+  "message": "Buffer cleared for client client_001"
+}
+```
+
+---
+
+### Model Training
+
+#### POST /api/train
+Train a new model with provided data (Admin only).
+
+**Authentication:** Required (Admin role)
+
+**Request Body:**
+```json
+{
+  "X_train": [
+    [0.5, 0.3, 0.2, 0.1, 0.4],
+    [0.6, 0.4, 0.3, 0.2, 0.5]
+  ],
+  "y_train": [0, 1],
+  "X_test": [
+    [0.4, 0.2, 0.1, 0.05, 0.3]
+  ],
+  "y_test": [0],
+  "config": {
+    "model_type": "enhanced_cnn_lstm",
+    "epochs": 30,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "dropout_rate": 0.3,
+    "use_separable": true,
+    "use_relative_pos": true,
+    "l1_reg": 0.00001,
+    "l2_reg": 0.0001,
+    "subject_id": "subject_001",
+    "session_id": "training_session_001"
+  }
+}
+```
+
+**Model Types:**
+- `original`: Basic CNN-LSTM
+- `enhanced_cnn_lstm`: Enhanced CNN-LSTM with attention
+- `resnet_lstm`: ResNet-style CNN with LSTM
+- `transformer`: Transformer-based architecture
+
+**Response (202):**
+```json
+{
+  "job_id": "train_20251113_103000_admin",
+  "status": "queued",
+  "message": "Training job started in background",
+  "started_at": "2025-11-13T10:30:00Z"
+}
+```
+
+---
+
+#### POST /api/train/file
+Train model from uploaded file (Admin only).
+
+**Authentication:** Required (Admin role)
+
+**Request:**
+```
+Content-Type: multipart/form-data
+
+file: <training_data.csv>
+config: {
+  "model_type": "enhanced_cnn_lstm",
+  "epochs": 30,
+  "batch_size": 32
+}
+```
+
+**Response (202):**
+```json
+{
+  "job_id": "train_file_20251113_103000_admin",
+  "status": "queued",
+  "message": "Training job started from file training_data.csv",
+  "started_at": "2025-11-13T10:30:00Z"
+}
+```
+
+---
+
+#### GET /api/train/status/{job_id}
+Get training job status.
+
+**Authentication:** Required
+
+**Response (200):**
+```json
+{
+  "job_id": "train_20251113_103000_admin",
+  "status": "training",
+  "progress": 0.65,
+  "message": "Training in progress - Epoch 20/30",
+  "started_at": "2025-11-13T10:30:00Z",
+  "completed_at": null,
+  "metrics": null,
+  "error": null
+}
+```
+
+**Status Values:**
+- `queued`: Job is queued
+- `training`: Training in progress
+- `completed`: Training completed successfully
+- `failed`: Training failed
+
+**Completed Job Response:**
+```json
+{
+  "job_id": "train_20251113_103000_admin",
+  "status": "completed",
+  "progress": 1.0,
+  "message": "Training completed successfully",
+  "started_at": "2025-11-13T10:30:00Z",
+  "completed_at": "2025-11-13T10:45:00Z",
+  "metrics": {
+    "final_train_accuracy": 0.95,
+    "final_val_accuracy": 0.92,
+    "final_train_loss": 0.15,
+    "final_val_loss": 0.22,
+    "test_metrics": {
+      "accuracy": 0.91,
+      "precision": [0.90, 0.92, 0.91],
+      "recall": [0.89, 0.93, 0.90]
+    }
+  },
+  "error": null
+}
+```
+
+---
+
+#### GET /api/train/jobs
+List training jobs for current user.
+
+**Authentication:** Required
+
+**Query Parameters:**
+- `limit`: Number of jobs to return (default: 10)
+
+**Response (200):**
+```json
+[
+  {
+    "job_id": "train_20251113_103000_admin",
+    "status": "completed",
+    "progress": 1.0,
+    "message": "Training completed successfully",
+    "started_at": "2025-11-13T10:30:00Z",
+    "completed_at": "2025-11-13T10:45:00Z",
+    "metrics": { ... },
+    "error": null
+  },
+  {
+    "job_id": "train_20251113_090000_admin",
+    "status": "failed",
+    "progress": 0.3,
+    "message": "Training failed",
+    "started_at": "2025-11-13T09:00:00Z",
+    "completed_at": "2025-11-13T09:10:00Z",
+    "metrics": null,
+    "error": "Insufficient training data"
+  }
+]
+```
+
+---
+
+#### DELETE /api/train/job/{job_id}
+Delete a training job record (Admin only).
+
+**Authentication:** Required (Admin role)
+
+**Response (200):**
+```json
+{
+  "status": "success",
+  "message": "Training job train_20251113_103000_admin deleted"
+}
+```
+
+---
+
+#### POST /api/train/compare
+Compare multiple model architectures (Admin only).
+
+**Authentication:** Required (Admin role)
+
+**Request Body:**
+```json
+{
+  "X_train": [[...]],
+  "y_train": [...],
+  "X_test": [[...]],
+  "y_test": [...],
+  "config": {
+    "epochs": 30,
+    "batch_size": 32
+  }
+}
+```
+
+**Query Parameters:**
+- `n_repeats`: Number of training repeats (default: 3)
+
+**Response (202):**
+```json
+{
+  "job_id": "compare_20251113_103000_admin",
+  "status": "queued",
+  "message": "Model comparison started in background",
+  "started_at": "2025-11-13T10:30:00Z"
+}
+```
+
+**Completed Comparison Results:**
+```json
+{
+  "job_id": "compare_20251113_103000_admin",
+  "status": "completed",
+  "metrics": {
+    "original": {
+      "accuracy": [0.85, 0.86, 0.84],
+      "auc": [0.88, 0.89, 0.87],
+      "training_time": [120.5, 118.3, 122.1],
+      "inference_time": [0.015, 0.014, 0.016],
+      "model_size": [2.5, 2.5, 2.5]
+    },
+    "enhanced_cnn_lstm": {
+      "accuracy": [0.92, 0.93, 0.91],
+      "auc": [0.95, 0.96, 0.94],
+      "training_time": [180.2, 175.8, 182.5],
+      "inference_time": [0.025, 0.024, 0.026],
+      "model_size": [5.2, 5.2, 5.2]
+    }
+  }
+}
+```
+
+---
+
+### Model Management
+
+#### POST /calibrate
+Calibrate model with new data.
+
+**Authentication:** Optional
+
+**Request Body:**
+```json
+{
+  "calibration_data": {
+    "X": [[...]],
+    "y": [...]
+  }
+}
+```
+
+**Response (200):**
+```json
+{
+  "status": "calibration_started",
+  "message": "Calibration process initiated"
+}
+```
+
+---
+
+#### GET /recommendations
+Get recommendations based on analysis.
+
+**Authentication:** Optional
+
+**Query Parameters:**
+- `session_id`: Session ID (required)
+- `subject_id`: Subject ID (required)
+
+**Response (200):**
+```json
+{
+  "s
