@@ -5,15 +5,14 @@ from typing import Dict, Any, Optional, Union, List
 from datetime import datetime
 import os
 
-from core.ml.processing import (
+from preprocessing import (
     load_data,
-    label_eeg_states,
     extract_features,
-    preprocess_data,
-    temporal_smoothing,
-    calculate_state_durations
+    preprocess_data
 )
+from preprocessing.labeling import label_eeg_states
 from core.ml.model import load_calibrated_model
+from utils.temporal_processing import temporal_smoothing, calculate_state_durations
 from utils.recommendations import generate_recommendations
 from config.settings import PROCESSING_CONFIG, THRESHOLDS
 

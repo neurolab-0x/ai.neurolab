@@ -1,3 +1,18 @@
+"""
+DEPRECATED: This module has been consolidated into the preprocessing package.
+
+Please update your imports:
+- load_data -> from preprocessing import load_data
+- extract_features -> from preprocessing import extract_features  
+- label_eeg_states -> from preprocessing.labeling import label_eeg_states
+- preprocess_data -> from preprocessing import preprocess_data
+- temporal_smoothing -> from utils.temporal_processing import temporal_smoothing
+- calculate_state_durations -> from utils.temporal_processing import calculate_state_durations
+
+This file is kept for backward compatibility but will be removed in a future version.
+"""
+
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Tuple, Dict, Any, List, Optional
@@ -7,6 +22,13 @@ from ..models.eeg import EEGFeatures, EEGChannelData, EEGRecording
 from scipy import signal
 
 logger = logging.getLogger(__name__)
+
+# Issue deprecation warning
+warnings.warn(
+    "core.ml.processing is deprecated. Use preprocessing package instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 def load_data(file_path: str) -> np.ndarray:
     """Load EEG data from file"""
@@ -431,3 +453,85 @@ def _calculate_signal_quality(band_powers: Dict[str, float]) -> float:
     except Exception as e:
         logger.error(f"Error calculating signal quality: {str(e)}")
         return 0.0 
+
+# Ba
+ckward compatibility wrappers
+def load_data(file_path: str) -> np.ndarray:
+    """DEPRECATED: Use preprocessing.load_data instead"""
+    warnings.warn("Use preprocessing.load_data instead", DeprecationWarning)
+    from preprocessing import load_data as new_load_data
+    result = new_load_data(file_path)
+    # Convert DataFrame to numpy if needed
+    if hasattr(result, 'values'):
+        return result.values
+    return result
+
+def extract_features(data: np.ndarray) -> List[EEGFeatures]:
+    """DEPRECATED: Use preprocessing.extract_features instead"""
+    warnings.warn("Use preprocessing.extract_features instead", DeprecationWarning)
+    # Keep original implementation for backward compatibility
+    try:
+        logger.info("Extracting EEG features")
+        features = []
+        for i, row in enumerate(data):
+            try:
+                logger.debug(f"Processing row {i}: {row}")
+                feature = EEGFeatures(
+                    alpha=float(row[0]),
+                    beta=float(row[1]),
+                    theta=float(row[2]),
+                    delta=float(row[3]),
+                    gamma=float(row[4])
+                )
+                features.append(feature)
+            except Exception as row_error:
+                logger.error(f"Error processing row {i}: {str(row_error)}")
+                raise
+        logger.debug(f"Extracted {len(features)} features")
+        return features
+    except Exception as e:
+        logger.error(f"Error extracting features: {str(e)}")
+        raise
+
+def label_eeg_states(data: np.ndarray) -> np.ndarray:
+    """DEPRECATED: Use preprocessing.labeling.label_eeg_states instead"""
+    warnings.warn("Use preprocessing.labeling.label_eeg_states instead", DeprecationWarning)
+    # Keep original implementation for backward compatibility
+    try:
+        logger.info("Labeling EEG states")
+        alpha = data[:, 0]
+        beta = data[:, 1]
+        theta = data[:, 2]
+        delta = data[:, 3]
+        gamma = data[:, 4]
+        
+        logger.debug(f"Frequency band shapes - alpha: {alpha.shape}, beta: {beta.shape}, theta: {theta.shape}")
+        
+        beta_alpha_ratio = beta / (alpha + 1e-10)
+        theta_beta_ratio = theta / (beta + 1e-10)
+        
+        states = np.= (X - zed _normali
+        X=0).std(X, axisX_std = np       
+ 0) axis=(X, np.mean X_mean =")
+       ures featlizing"Normaer.debug( logg
+       
+        "){X.shape}y shape: ature arraFeg(f".debuger  log])
+      n features ifor f f.gamma] ta, f.delta,theta, f. f.bey([[f.alpha,p.arra n     X =ay")
+   to numpy arrng features "Convertier.debug(      logges")
+  sing featurrocesfo("Preper.in  loggry:
+      ity
+    ttibilckward compa for baationplemental imin Keep orig
+    #Warning)ionprecat", Deta insteaddapreprocess_rocessing.prep"Use n(ings.war"
+    warninstead""ata eprocess_d.prsingreprocesD: Use pDEPRECATE"""  rray]:
+  ndandarray, np.np.rray, ay, np.nda.ndarrdarray, np> Tuple[np.natures]) -GFest[EELies: featuress_data(ocpr
+def pre
+     raise)
+   : {str(e)}"g EEG stateslabelin"Error gger.error(f
+        lon as e:ceptiot Ex    exceps
+statereturn       )
+  )}"type(int)asount(states.incon: {np.btitribudised states abeldebug(f"Llogger.  
+        
+      .8)] = 2_ratio > 0taheta_be > 1.2) & (talpha_ratioes[(beta_      stat= 1
+   0.5)] o <a_beta_rati (thet) &io > 1.2_alpha_ratstates[(beta       5] = 0
+ < 0.ha_ratio beta_alpates[  st)
+      ata)(dzeros(len

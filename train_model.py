@@ -5,7 +5,9 @@ import pandas as pd
 import os
 import logging
 from core.data.handler import DataHandler
-from core.ml.processing import load_data, label_eeg_states, extract_features, preprocess_data
+from preprocessing import load_data, extract_features, preprocess_data
+from preprocessing.labeling import label_eeg_states
+from core.ml.model import create_model as create_base_model
 
 # Configure logging
 logging.basicConfig(
@@ -14,24 +16,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def create_model(input_shape=(5, 1)):
-    """Create a simple CNN model for EEG state classification"""
-    model = models.Sequential([
-        layers.Conv1D(32, 3, activation='relu', input_shape=input_shape),
-        layers.MaxPooling1D(2),
-        layers.Flatten(),
-        layers.Dense(64, activation='relu'),
-        layers.Dropout(0.2),
-        layers.Dense(3, activation='softmax')  # 3 states: relaxation, attention, stress
-    ])
-    
-    model.compile(
-        optimizer='adam',
-        loss='sparse_categorical_crossentropy',
-        metrics=['accuracy']
-    )
-    
-    return model
+# Model creation moved to core/ml/model.py - using create_base_model imported above
 
 def prepare_training_data(data_path: str):
     """Prepare data for training"""
@@ -88,7 +73,7 @@ def train_model(data_path: str, model_save_path: str):
         
         # Create and train model
         logger.info("Creating model...")
-        model = create_model(input_shape=(X_train.shape[1], 1))
+        model = create_base_model(input_shape=(X_train.shape[1], 1))
         
         logger.info("Training model...")
         history = model.fit(

@@ -6,41 +6,8 @@ from typing import Tuple, Dict, Any
 
 logger = logging.getLogger(__name__)
 
-def load_calibrated_model(model_path: str) -> keras.Model:
-    """
-    Load a calibrated model from the specified path.
-    
-    Args:
-        model_path (str): Path to the saved model file
-        
-    Returns:
-        keras.Model: Loaded and calibrated model
-        
-    Raises:
-        FileNotFoundError: If model file doesn't exist
-        ValueError: If model loading fails
-    """
-    try:
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"Model file not found: {model_path}")
-            
-        logger.info(f"Loading model from {model_path}")
-        model = keras.models.load_model(model_path)
-        
-        # Verify model structure
-        if not isinstance(model, keras.Model):
-            raise ValueError("Loaded object is not a valid Keras model")
-            
-        # Test model with dummy data
-        dummy_input = np.zeros((1, *model.input_shape[1:]))
-        _ = model.predict(dummy_input)
-        
-        logger.info("Model loaded and verified successfully")
-        return model
-        
-    except Exception as e:
-        logger.error(f"Model loading failed: {str(e)}")
-        raise
+# load_calibrated_model has been moved to core/ml/model.py
+# Import it from there: from core.ml.model import load_calibrated_model
 
 def get_available_models() -> Dict[str, Any]:
     """
