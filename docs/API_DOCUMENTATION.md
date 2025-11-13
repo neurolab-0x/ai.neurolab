@@ -744,4 +744,270 @@ Get recommendations based on analysis.
 **Response (200):**
 ```json
 {
-  "s
+  "session_id": "session_001",
+  "subject_id": "subject_001",
+  "recommendations": [
+    {
+      "type": "stress_management",
+      "severity": "medium",
+      "message": "Consider stress reduction techniques",
+      "confidence": 0.85
+    },
+    {
+      "type": "attention_improvement",
+      "severity": "low",
+      "message": "Attention levels are good",
+      "confidence": 0.90
+    }
+  ]
+}
+```
+
+---
+
+## Data Models
+
+### EEGFeatures
+```typescript
+{
+  alpha: number,    // Alpha band power (8-13 Hz)
+  beta: number,     // Beta band power (13-30 Hz)
+  theta: number,    // Theta band power (4-8 Hz)
+  delta: number,    // Delta band power (0.5-4 Hz)
+  gamma: number     // Gamma band power (30-45 Hz)
+}
+```
+
+### EEGDataPoint
+```typescript
+{
+  timestamp: string (ISO 8601),
+  features: EEGFeatures,
+  state: number (0-2),
+  confidence: number (0-100),
+  metadata: {
+    signal_quality: number (0-1),
+    device: string,
+    session_id: string,
+    subject_id: string
+  }
+}
+```
+
+### Mental States
+```typescript
+enum MentalState {
+  RELAXED = 0,      // Relaxation/calm state
+  FOCUSED = 1,      // Attention/focus state
+  STRESSED = 2      // Stress/anxiety state
+}
+```
+
+### TrainingConfig
+```typescript
+{
+  model_type: "original" | "enhanced_cnn_lstm" | "resnet_lstm" | "transformer",
+  epochs: number (1-200),
+  batch_size: number (1-256),
+  learning_rate: number (0-1),
+  dropout_rate: number (0-0.9),
+  use_separable: boolean,
+  use_relative_pos: boolean,
+  l1_reg: number (>=0),
+  l2_reg: number (>=0),
+  subject_id?: string,
+  session_id?: string
+}
+```
+
+---
+
+## Rate Limiting
+
+**Default Limits:**
+- 60 requests per minute per client
+- Identified by IP address or X-Client-ID header
+
+**Rate Limit Headers:**
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1699876800
+```
+
+**Rate Limit Exceeded Response (429):**
+```json
+{
+  "status": "error",
+  "detail": "Too many requests. Please try again later.",
+  "retry_after": 30
+}
+```
+
+---
+
+## Examples
+
+### Example 1: Complete Authentication Flow
+
+```python
+import requests
+
+BASE_URL = "https://model.neurolab.cc"
+
+# 1. Login
+login_response = requests.post(
+    f"{BASE_URL}/api/auth/login",
+    json={
+        "username": "user",
+        "password": "secure_password"
+    }
+)
+tokens = login_response.json()
+access_token = tokens["access_token"]
+
+# 2. Use authenticated endpoint
+headers = {"Authorization": f"Bearer {access_token}"}
+stream_response = requests.post(
+    f"{BASE_URL}/api/stream",
+    headers=headers,
+    json={
+        "eeg_data": [[0.5, 0.3, 0.2, 0.1, 0.4]],
+        "client_id": "python_client"
+    }
+)
+print(stream_response.json())
+
+# 3. Logout
+requests.post(
+    f"{BASE_URL}/api/auth/logout",
+    headers=headers
+)
+```
+
+### Example 2: Real-time Streaming
+
+```python
+import requests
+import time
+
+BASE_URL = "https://model.neurolab.cc"
+headers = {"Authorization": f"Bearer {access_token}"}
+
+# Stream multiple data points
+for i in range(10):
+    eeg_data = generate_eeg_sample()  # Your function
+    
+    response = requests.post(
+        f"{BASE_URL}/api/stream",
+        headers=headers,
+        json={
+            "eeg_data": [eeg_data],
+            "client_id": "streaming_client",
+            "include_interpretability": True
+        }
+    )
+    
+    result = response.json()
+    print(f"State: {result['dominant_state']}, "
+          f"Confidence: {result['confidence']}%")
+    
+    time.sleep(1)  # 1 Hz sampling
+```
+
+### Example 3: File Upload and Analysis
+
+```python
+import requests
+
+BASE_URL = "https://model.neurolab.cc"
+
+# Upload CSV file
+with open("eeg_data.csv", "rb") as f:
+    files = {"file": f}
+    response = requests.post(
+        f"{BASE_URL}/upload",
+        files=files
+    )
+
+result = response.json()
+print(f"Analysis complete:")
+print(f"  State: {result['state_label']}")
+print(f"  Confidence: {result['confidence']}%")
+print(f"  Recommendations: {result['recommendations']}")
+```
+
+### Example 4: Model Training (Admin)
+
+```python
+import requests
+import time
+
+BASE_URL = "https://model.neurolab.cc"
+headers = {"Authorization": f"Bearer {admin_token}"}
+
+# Start training
+train_response = requests.post(
+    f"{BASE_URL}/api/train",
+    headers=headers,
+    json={
+        "X_train": training_features,
+        "y_train": training_labels,
+        "X_test": test_features,
+        "y_test": test_labels,
+        "config": {
+            "model_type": "enhanced_cnn_lstm",
+            "epochs": 50,
+            "batch_size": 32
+        }
+    }
+)
+
+job_id = train_response.json()["job_id"]
+
+# Poll for status
+while True:
+    status_response = requests.get(
+        f"{BASE_URL}/api/train/status/{job_id}",
+        headers=headers
+    )
+    status = status_response.json()
+    
+    print(f"Progress: {status['progress']*100:.1f}% - {status['message']}")
+    
+    if status["status"] in ["completed", "failed"]:
+        break
+    
+    time.sleep(5)
+
+# Get final metrics
+if status["status"] == "completed":
+    print(f"Training completed!")
+    print(f"Accuracy: {status['metrics']['final_val_accuracy']:.2%}")
+```
+
+---
+
+## Security Best Practices
+
+1. **Always use HTTPS** in production
+2. **Store tokens securely** (never in localStorage for web apps)
+3. **Implement token refresh** before expiry
+4. **Validate all inputs** on client side
+5. **Handle rate limits** gracefully with exponential backoff
+6. **Use encryption** for sensitive EEG data
+7. **Implement proper error handling**
+
+---
+
+## Support
+
+For API support and questions:
+- **Email:** nelsonprox92@gmail.com
+- **Documentation:** https://neurolab.cc/docs
+- **GitHub:** https://github.com/asimwe1/eeg-ds
+
+---
+
+**Last Updated:** November 13, 2025  
+**API Version:** 1.0.0
