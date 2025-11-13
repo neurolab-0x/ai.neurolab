@@ -54,7 +54,6 @@ plotly>=5.18.0
 # Signal Processing
 # ============================================
 statsmodels>=0.14.0
-pywt>=1.4.1  # PyWavelets (alternative import name)
 
 # ============================================
 # HTTP Clients and Async
