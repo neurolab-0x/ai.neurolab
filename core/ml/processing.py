@@ -510,7 +510,41 @@ def label_eeg_states(data: np.ndarray) -> np.ndarray:
         beta_alpha_ratio = beta / (alpha + 1e-10)
         theta_beta_ratio = theta / (beta + 1e-10)
         
-        states = np.= (X - zed _normali
+        states = np.)
+ncede, confirationns, total_dutioraate_dutions(st_recommendanerateew_gern n
+    retuendationsecommte_rraenes as new_gdationate_recommenmport geners itionmenda utils.recom fromg)
+   arninrecationWtead", Dep insmendationsate_recomers.gencommendationUse utils.regs.warn("   warnin
+ ead"""nsttions iecommendae_reratdations.genecommenils.re utUsD: TEECA""DEPR   "y]]:
+ str, Ant[Dict) -> List[nce: floaonfide float, cl_duration:, totant, float] Dict[ins:ratios(state_duontie_recommenda generats)
+
+deftate_durations(se_statecalculatreturn new_ions
+    e_duratstate_culatew_calrations as ntate_duate_sulort calcimping oral_processs.tempm util)
+    froarningprecationW, Deinstead"tions ra_state_dung.calculatecessiral_pros.tempoutilse n("Us.warwarning  d"""
+  stea innsduratioe_tatcalculate_scessing._proral.tempose utilsRECATED: U"DEP
+    ""]:loatict[int, fray) -> Dnp.ndares: ns(statatioe_dur_statculateef calsize)
+
+dw_ windoons,ictig(predl_smoothinnew_temporaurn  ret
+   othingtemporal_smohing as new_otral_smoimport temporocessing mporal_pm utils.te
+    froning)onWar", Deprecating insteadoothil_sm.temporarocessingtemporal_putils.se ("Uwarn  warnings."""
+  steadsmoothing ing.temporal__processinls.temporalED: Use uti""DEPRECAT  "darray:
+  p.n-> n= 5) ze: int _sirray, windows: np.ndaredictionthing(psmoo temporal_
+
+defraise  ")
+      {str(e)}g data: essinprocrror preor(f"E  logger.err      ion as e:
+ Except  excepty_test
+  _train, est, y X_tin,lized, X_tran X_norma      reture}")
+  hap_test.st size: {Xt sehape}, Tesain.s: {X_trin set sizef"Tragger.debug(      lo     
+  
+   x:]_idy[split y_test =     
+   idx]:split_ain = y[ y_tr]
+       dx:ed[split_inormalizt = X_   X_tes
+     _idx]it:spl_normalized[ X_train = X))
+       X_normalized.8 * len( int(0t_idx =  spli
+           
+   res))tus(len(feap.zero= n
+        y        pe}")
+ sha_normalized.hape: {Xd feature srmalize(f"Nor.debug     logge  
+ -10)+ 1etd  (X_sX_mean) /= (X - zed _normali
         X=0).std(X, axisX_std = np       
  0) axis=(X, np.mean X_mean =")
        ures featlizing"Normaer.debug( logg
