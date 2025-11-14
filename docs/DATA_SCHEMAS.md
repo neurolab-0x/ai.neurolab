@@ -385,22 +385,3 @@ interface UserInfo {
   created_at?: string;
 }
 ```
-
----
-
-## Database Models
-
-### MongoDB Collections
-
-#### sessions Collection
-
-```typescript
-{
-  _id: ObjectId,
-  session_id: string,           // Unique identifier
-  subject_id: string,
-  start_time: Date,
-  end_time: Date,
-  device: string,
-  sampling_rate: number,
-  total_samples: number,
