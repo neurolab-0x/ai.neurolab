@@ -25,8 +25,19 @@ def compute_psd(signal: np.ndarray, fs: float = 250) -> Tuple[np.ndarray, np.nda
         if len(signal) < 2:
             raise FeatureExtractionError("Signal too short for PSD computation")
         
-        nperseg = min(256, len(signal))
-        freqs, psd = welch(signal, fs=fs, nperseg=nperseg)
+        # Adjust nperseg based on signal length
+        # Welch's method requires nperseg to be less than signal length
+        # and ideally a power of 2
+        if len(signal) < 256:
+            # For short signals, use a smaller window
+            nperseg = max(4, min(len(signal) // 2, 128))
+        else:
+            nperseg = 256
+            
+        # Ensure noverlap is less than nperseg
+        noverlap = nperseg //gh                                                                                                                                                                                                                                                                                                                           
+        
+        freqs, psd = welch(signal, fs=fs, nperseg=nperseg, noverlap=noverlap)
         return freqs, psd
     except Exception as e:
         raise FeatureExtractionError(f"Error in PSD computation: {str(e)}")
