@@ -9,13 +9,14 @@ logger = logging.getLogger(__name__)
 def create_model(input_shape: Tuple[int, int] = (5, 1)) -> tf.keras.Model:
     """Create a new EEG state classification model"""
     try:
+        # For small input (5 features), use a simpler architecture
         model = tf.keras.Sequential([
             tf.keras.layers.Input(shape=input_shape),
-            tf.keras.layers.Conv1D(32, 3, activation='relu'),
-            tf.keras.layers.MaxPooling1D(2),
-            tf.keras.layers.Conv1D(64, 3, activation='relu'),
-            tf.keras.layers.MaxPooling1D(2),
-            tf.keras.layers.Flatten(),
+            tf.keras.layers.Conv1D(32, 3, padding='same', activation='relu'),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Conv1D(64, 3, padding='same', activation='relu'),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.GlobalAveragePooling1D(),
             tf.keras.layers.Dense(64, activation='relu'),
             tf.keras.layers.Dropout(0.3),
             tf.keras.layers.Dense(32, activation='relu'),
@@ -25,7 +26,7 @@ def create_model(input_shape: Tuple[int, int] = (5, 1)) -> tf.keras.Model:
         
         model.compile(
             optimizer='adam',
-            loss='categorical_crossentropy',
+            loss='sparse_categorical_crossentropy',
             metrics=['accuracy']
         )
         
