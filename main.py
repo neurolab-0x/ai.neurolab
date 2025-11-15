@@ -17,12 +17,6 @@ from utils.ml_processor import MLProcessor
 # Import API routers
 from api.training import router as training_router
 from api.auth import router as auth_router
-try:
-    from api.streaming_endpoint import router as streaming_router
-    STREAMING_AVAILABLE = True
-except ImportError:
-    STREAMING_AVAILABLE = False
-    logger.warning("Streaming endpoint not available")
 
 # Configure logging
 logging.basicConfig(
@@ -35,6 +29,14 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("NeuroLabAPI")
+
+try:
+    from api.streaming_endpoint import router as streaming_router
+    STREAMING_AVAILABLE = True
+except ImportError:
+    STREAMING_AVAILABLE = False
+    logger.warning("Streaming endpoint not available")
+
 logger.setLevel(logging.DEBUG)
 
 # Initialize components
