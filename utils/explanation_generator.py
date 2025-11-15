@@ -44,14 +44,20 @@ class ExplanationGenerator:
                 )
             else:
                 # Use a pre-trained model for medical text generation
-                self.explainer = pipeline(
-                    "text-generation",
-                    model="gpt2",  # Replace with a medical-specific model if available
-                    device=0 if torch.cuda.is_available() else -1
-                )
+                # Skip model loading if offline or authentication fails
+                try:
+                    self.explainer = pipeline(
+                        "text-generation",
+                        model="gpt2",
+                        device=0 if torch.cuda.is_available() else -1
+                    )
+                except Exception as model_error:
+                    self.logger.warning(f"Could not load GPT-2 model: {str(model_error)}")
+                    self.logger.warning("Using template-based explanation generation instead")
+                    self.explainer = None
         except Exception as e:
             self.logger.error(f"Error loading explanation model: {str(e)}")
-            raise
+            self.explainer = None
         
         # Load medical terminology and guidelines
         self.medical_terms = self._load_medical_terminology()
@@ -270,31 +276,38 @@ class ExplanationGenerator:
                                state_info: Dict) -> str:
         """Generate the interpretation section."""
         try:
-            # Use the explainer model to generate interpretation
-            prompt = f"""
-            Based on the following EEG analysis:
-            State: {eeg_state.state}
-            Confidence: {eeg_state.confidence:.2%}
-            Features: {json.dumps(eeg_state.features)}
-            
-            Provide a professional medical interpretation:
-            """
-            
-            interpretation = self.explainer(
-                prompt,
-                max_length=200,
-                num_return_sequences=1,
-                temperature=0.7
-            )[0]["generated_text"]
-            
-            # Clean up the generated text
-            interpretation = interpretation.replace(prompt, "").strip()
+            # Use the explainer model to generate interpretation if available
+            if self.explainer is not None:
+                prompt = f"""
+                Based on the following EEG analysis:
+                State: {eeg_state.state}
+                Confidence: {eeg_state.confidence:.2%}
+                Features: {json.dumps(eeg_state.features)}
+                
+                Provide a professional medical interpretation:
+                """
+                
+                interpretation = self.explainer(
+                    prompt,
+                    max_length=200,
+                    num_return_sequences=1,
+                    temperature=0.7
+                )[0]["generated_text"]
+                
+                # Clean up the generated text
+                interpretation = interpretation.replace(prompt, "").strip()
+            else:
+                # Use template-based interpretation
+                interpretation = f"The EEG analysis indicates a {eeg_state.state} state with {eeg_state.confidence:.2%} confidence. "
+                interpretation += state_info.get("clinical_significance", "")
+                interpretation += f" The observed features include: {', '.join([f'{k}: {v:.2f}' for k, v in eeg_state.features.items()])}."
             
             return interpretation
             
         except Exception as e:
             self.logger.error(f"Error generating interpretation: {str(e)}")
-            raise
+            # Fallback to simple interpretation
+            return f"The EEG analysis indicates a {eeg_state.state} state with {eeg_state.confidence:.2%} confidence."
     
     def _generate_recommendations(self,
                                 eeg_state: EEGState,
