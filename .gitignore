@@ -14,3 +14,4 @@ processed/*
 .Python
 logs
 best_model_original.*
+temp
