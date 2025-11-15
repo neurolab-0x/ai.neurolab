@@ -12,3 +12,5 @@ processed/*
 *.o
 *.so
 .Python
+logs
+best_model_original.*

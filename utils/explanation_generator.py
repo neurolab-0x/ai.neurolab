@@ -258,7 +258,9 @@ class ExplanationGenerator:
             analysis += "\nAmplitude Analysis:\n"
             for feature, value in eeg_state.features.items():
                 if "amplitude" in feature.lower():
-                    threshold = self.guidelines["safety_thresholds"].get(feature, 0)
+                    threshold_data = self.guidelines["safety_thresholds"].get(feature, {})
+                    # Get default threshold if it's a dict, otherwise use the value
+                    threshold = threshold_data.get("default", 50) if isinstance(threshold_data, dict) else threshold_data
                     analysis += f"- {feature}: {value:.2f} μV "
                     if value <= threshold:
                         analysis += "(within safety limits)\n"
@@ -374,12 +376,20 @@ class ExplanationGenerator:
                 
                 # Add sleep information if available
                 if "sleep_hours" in additional_context:
-                    analysis += f"Reported Sleep: {additional_context['sleep_hours']}\n"
+                    sleep_value = additional_context['sleep_hours']
+                    analysis += f"Reported Sleep: {sleep_value}\n"
                     
                     # Add sleep-related recommendations
-                    sleep_hours = float(additional_context['sleep_hours'].split()[0])
-                    if sleep_hours < 7:
-                        analysis += "Note: Sleep duration is below recommended 7-9 hours\n"
+                    try:
+                        if isinstance(sleep_value, (int, float)):
+                            sleep_hours = float(sleep_value)
+                        else:
+                            sleep_hours = float(str(sleep_value).split()[0])
+                        
+                        if sleep_hours < 7:
+                            analysis += "Note: Sleep duration is below recommended 7-9 hours\n"
+                    except (ValueError, IndexError):
+                        pass  # Skip if sleep hours can't be parsed
             
             return analysis
             
@@ -404,9 +414,11 @@ class ExplanationGenerator:
             # Check amplitude thresholds
             for feature, value in eeg_state.features.items():
                 if "amplitude" in feature.lower():
-                    threshold = self.guidelines["safety_thresholds"].get(
-                        feature, {}).get(occupation, 
-                        self.guidelines["safety_thresholds"].get(feature, {}).get("default", 0))
+                    threshold_data = self.guidelines["safety_thresholds"].get(feature, {})
+                    if isinstance(threshold_data, dict):
+                        threshold = threshold_data.get(occupation, threshold_data.get("default", 50))
+                    else:
+                        threshold = threshold_data if threshold_data else 50
                     
                     if value > threshold:
                         assessment["concerns"].append(
