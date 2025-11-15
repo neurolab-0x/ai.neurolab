@@ -99,4 +99,4 @@ class ModelInterpretability:
         ax.set_title('Reliability Diagram')
         ax.legend()
         
-        return fig 
+        return fig

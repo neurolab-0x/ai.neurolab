@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 def run_all_tests():
     """Discover and run all tests"""
     logger.info("="*60)
-    logger.info("Starting NeuroLab Test Suite")
+    logger.info("Starting Neurolab Test Suite")
     logger.info("="*60)
     
     # Discover tests
