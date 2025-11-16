@@ -283,14 +283,15 @@ def preprocess_data(df: pd.DataFrame, target_column: str = 'eeg_state',
             cache_path = Path(cache_dir)
             cache_path.mkdir(parents=True, exist_ok=True)
         
-        # Validate input data
-        validation_results = validate_input_data(df, target_column)
-        metadata['validation_results'] = validation_results
-        
-        if not validation_results['is_valid']:
-            logger.warning("Data validation failed. Proceeding with caution.")
-            for warning in validation_results['warnings']:
-                logger.warning(warning)
+        # Validate input data (only if target column exists)
+        if target_column in df.columns:
+            validation_results = validate_input_data(df, target_column)
+            metadata['validation_results'] = validation_results
+            
+            if not validation_results['is_valid']:
+                logger.warning("Data validation failed. Proceeding with caution.")
+                for warning in validation_results['warnings']:
+                    logger.warning(warning)
         
         # Extract features if needed
         if 'eeg_state' in df.columns and len(df.columns) < 10:

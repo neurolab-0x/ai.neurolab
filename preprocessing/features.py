@@ -35,7 +35,7 @@ def compute_psd(signal: np.ndarray, fs: float = 250) -> Tuple[np.ndarray, np.nda
             nperseg = 256
             
         # Ensure noverlap is less than nperseg
-        noverlap = nperseg //gh                                                                                                                                                                                                                                                                                                                           
+        noverlap = nperseg // 2                                                                                                                                                                                                                                                                                                                           
         
         freqs, psd = welch(signal, fs=fs, nperseg=nperseg, noverlap=noverlap)
         return freqs, psd
@@ -327,7 +327,10 @@ def extract_features(df: pd.DataFrame) -> pd.DataFrame:
     Parameters:
     -----------
     df : pd.DataFrame
-        Input dataframe containing EEG data
+        Input dataframe containing EEG data.
+        Can be either:
+        - Raw time-series data (rows=timepoints, columns=channels)
+        - Pre-computed features (rows=samples, columns=features)
         
     Returns:
     --------
@@ -336,10 +339,49 @@ def extract_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     try:
         numerical_cols = df.select_dtypes(include=[np.number]).columns
-        feature_list = []
         
+        # Exclude timestamp and state columns
+        eeg_channels = [col for col in numerical_cols if col.lower() not in ['timestamp', 'time', 'eeg_state', 'state', 'label']]
+        
+        # Check if this is raw time-series data or pre-computed features
+        # Raw data: many rows (>50), few columns (channels)
+        # Features: few rows (samples), many columns (features)
+        is_raw_timeseries = len(df) > 50 and len(eeg_channels) < 100
+        
+        if is_raw_timeseries:
+            logger.info(f"Processing raw time-series data: {len(df)} timepoints, {len(eeg_channels)} channels")
+            # Process as time-series: extract features from each channel's full signal
+            return extract_features_from_timeseries(df, eeg_channels)
+        else:
+            logger.info(f"Processing pre-computed features: {len(df)} samples")
+            # Already features, just return (maybe with some processing)
+            return df
+            
+    except Exception as e:
+        logger.error(f"Error in feature extraction: {str(e)}")
+        raise FeatureExtractionError(f"Error in feature extraction: {str(e)}")
+
+
+def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str]) -> pd.DataFrame:
+    """
+    Extract features from raw time-series EEG data.
+    Processes entire signal for each channel.
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        DataFrame with rows=timepoints, columns=channels
+    eeg_channels : List[str]
+        List of EEG channel names
+        
+    Returns:
+    --------
+    pd.DataFrame
+        Single-row DataFrame with extracted features
+    """
+    try:
         def process_channel(channel_data: np.ndarray, col_name: str) -> Dict[str, float]:
-            """Process a single channel's data"""
+            """Process a single channel's entire time series"""
             features = {}
             
             # Time domain features
@@ -374,49 +416,43 @@ def extract_features(df: pd.DataFrame) -> pd.DataFrame:
             
             return features
         
-        # Process each row
-        for i, row in df.iterrows():
-            feature_data = {}
-            
-            # Process each channel
-            for col in numerical_cols:
-                if col != 'eeg_state':
-                    signal = np.array([row[col]]) if isinstance(row[col], (int, float)) else row[col]
-                    feature_data.update(process_channel(signal, col))
-            
-            # Multi-channel features
-            eeg_channels = [col for col in numerical_cols if col != 'eeg_state']
-            if len(eeg_channels) > 1:
-                # Compute cross-channel features
-                for i, ch1 in enumerate(eeg_channels[:-1]):
-                    for ch2 in eeg_channels[i+1:]:
-                        sig1 = np.array([row[ch1]]) if isinstance(row[ch1], (int, float)) else row[ch1]
-                        sig2 = np.array([row[ch2]]) if isinstance(row[ch2], (int, float)) else row[ch2]
-                        
-                        if len(sig1) > 1 and len(sig2) > 1:
-                            try:
-                                cross_features = compute_cross_channel_features(sig1, sig2)
-                                feature_data.update({
-                                    f'{ch1}_{ch2}_{k}': v for k, v in cross_features.items()
-                                })
-                            except Exception:
-                                pass
-                
-                # Compute PCA features for all channels
-                try:
-                    signals = np.array([row[col] for col in eeg_channels])
-                    pca_features = compute_pca_features(signals)
-                    feature_data.update(pca_features)
-                except Exception:
-                    pass
-            
-            # Keep original label
-            if 'eeg_state' in row:
-                feature_data['eeg_state'] = row['eeg_state']
-            
-            feature_list.append(feature_data)
+        feature_data = {}
         
-        return pd.DataFrame(feature_list)
+        # Process each channel's full time series
+        for col in eeg_channels:
+            channel_signal = df[col].values  # Get entire column as numpy array
+            logger.debug(f"Processing channel {col}: {len(channel_signal)} samples")
+            feature_data.update(process_channel(channel_signal, col))
+        
+        # Multi-channel features
+        if len(eeg_channels) > 1:
+            # Compute cross-channel features for first few channel pairs (to avoid explosion)
+            max_pairs = min(5, len(eeg_channels) - 1)
+            for i in range(max_pairs):
+                ch1 = eeg_channels[i]
+                ch2 = eeg_channels[i + 1]
+                sig1 = df[ch1].values
+                sig2 = df[ch2].values
+                
+                try:
+                    cross_features = compute_cross_channel_features(sig1, sig2)
+                    feature_data.update({
+                        f'{ch1}_{ch2}_{k}': v for k, v in cross_features.items()
+                    })
+                except Exception as e:
+                    logger.warning(f"Could not compute cross-channel features for {ch1}-{ch2}: {str(e)}")
+            
+            # Compute PCA features for all channels
+            try:
+                signals = np.array([df[col].values for col in eeg_channels])
+                pca_features = compute_pca_features(signals)
+                feature_data.update(pca_features)
+            except Exception as e:
+                logger.warning(f"Could not compute PCA features: {str(e)}")
+        
+        # Return as single-row DataFrame
+        return pd.DataFrame([feature_data])
         
     except Exception as e:
-        raise FeatureExtractionError(f"Error in feature extraction: {str(e)}")
+        logger.error(f"Error extracting features from timeseries: {str(e)}")
+        raise FeatureExtractionError(f"Error extracting features from timeseries: {str(e)}")
