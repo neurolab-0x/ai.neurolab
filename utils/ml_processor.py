@@ -13,7 +13,7 @@ from preprocessing import (
 from preprocessing.labeling import label_eeg_states
 from core.ml.model import load_calibrated_model
 from utils.temporal_processing import temporal_smoothing, calculate_state_durations
-from utils.recommendations import generate_recommendations
+from utils.nlp_recommendations import NLPRecommendationEngine
 from config.settings import PROCESSING_CONFIG, THRESHOLDS
 
 logger = logging.getLogger(__name__)
@@ -34,6 +34,7 @@ class MLProcessor:
         self.model_path = model_path
         self.model = None
         self.model_loaded = False
+        self.recommendation_engine = NLPRecommendationEngine()
         self._load_model()
         logger.info("ML Processor initialized")
     
@@ -96,11 +97,17 @@ class MLProcessor:
             state_durations = calculate_state_durations(smoothed_states)
             total_duration = len(smoothed_states)
             
-            # Step 5: Generate recommendations
-            recommendations = generate_recommendations(
+            # Step 4.5: Calculate cognitive metrics
+            cognitive_metrics = self._calculate_cognitive_metrics(processed_features)
+            state_transitions = self._count_state_transitions(smoothed_states)
+            
+            # Step 5: Generate NLP-based recommendations
+            recommendations = self.recommendation_engine.generate_recommendations(
                 state_durations,
                 total_duration,
-                predictions['confidence']
+                predictions['confidence'],
+                cognitive_metrics=cognitive_metrics,
+                state_transitions=state_transitions
             )
             
             # Step 6: Compile results
@@ -119,9 +126,9 @@ class MLProcessor:
                 'temporal_analysis': {
                     'total_samples': int(total_duration),
                     'smoothing_window': PROCESSING_CONFIG['smoothing_window'],
-                    'state_transitions': self._count_state_transitions(smoothed_states)
+                    'state_transitions': state_transitions
                 },
-                'cognitive_metrics': self._calculate_cognitive_metrics(processed_features),
+                'cognitive_metrics': cognitive_metrics,
                 'clinical_recommendations': recommendations,
                 'metadata': {
                     'subject_id': subject_id,
@@ -393,6 +400,52 @@ class MLProcessor:
         logger.info(f"Reloading model from {self.model_path}")
         self._load_model()
     
+    def generate_detailed_report(
+        self,
+        data: Union[str, Dict, np.ndarray, pd.DataFrame],
+        subject_id: str = "anonymous",
+        session_id: str = "default_session",
+        save_report: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Generate a detailed report with comprehensive recommendations.
+        
+        Args:
+            data: EEG data in various formats
+            subject_id: Subject identifier
+            session_id: Session identifier
+            save_report: Whether to save the report to a file
+            
+        Returns:
+            Detailed report dictionary
+        """
+        try:
+            # Process the data first
+            result = self.process_eeg_data(data, subject_id, session_id)
+            
+            # Generate detailed report using NLP engine
+            detailed_report = self.recommendation_engine.generate_detailed_report(
+                state_durations=result['state_durations'],
+                total_duration=result['temporal_analysis']['total_samples'],
+                confidence=result['confidence'],
+                cognitive_metrics=result['cognitive_metrics'],
+                state_transitions=result['temporal_analysis']['state_transitions']
+            )
+            
+            # Merge with existing result
+            detailed_report['analysis_results'] = result
+            
+            # Save report if requested
+            if save_report:
+                filepath = self.recommendation_engine.save_report(detailed_report)
+                detailed_report['report_saved_to'] = filepath
+            
+            return detailed_report
+            
+        except Exception as e:
+            logger.error(f"Error generating detailed report: {str(e)}")
+            raise
+    
     def get_status(self) -> Dict[str, Any]:
         """
         Get the current status of the ML Processor.
@@ -404,5 +457,6 @@ class MLProcessor:
             'model_loaded': self.model_loaded,
             'model_path': self.model_path,
             'model_exists': os.path.exists(self.model_path),
-            'model_type': type(self.model).__name__ if self.model else None
+            'model_type': type(self.model).__name__ if self.model else None,
+            'recommendation_engine_loaded': self.recommendation_engine is not None
         }

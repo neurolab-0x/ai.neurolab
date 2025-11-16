@@ -98,14 +98,23 @@ async def root():
     return {
         "name": "NeuroLab EEG Analysis API",
         "version": "1.0.0",
-        "description": "API for EEG signal processing and mental state classification",
+        "description": "API for EEG signal processing and mental state classification with NLP-based recommendations",
         "endpoints": {
             "health": "/health",
             "upload": "/upload",
             "analyze": "/analyze",
-            "calibrate": "/calibrate",
-            "recommendations": "/recommendations"
-        }
+            "detailed_report": "/detailed-report",
+            "recommendations": "/recommendations",
+            "calibrate": "/calibrate"
+        },
+        "features": [
+            "Real-time EEG analysis",
+            "Mental state classification (relaxed, focused, stressed)",
+            "NLP-based personalized recommendations",
+            "Cognitive metrics calculation",
+            "Wellness scoring",
+            "Detailed reporting with insights"
+        ]
     }
 
 @app.post('/upload', summary="Advanced EEG analysis", response_description="Cognitive state report", tags=["Analysis"])
@@ -166,18 +175,50 @@ async def calibrate_model(
         logger.error(f"Error calibrating model: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get('/recommendations', summary="Get recommendations", response_description="Recommendations based on analysis", tags=["Analysis"])
-async def get_recommendations(
-    session_id: str = Query(..., description="Session ID to get recommendations for"),
-    subject_id: str = Query(..., description="Subject ID")
+@app.post('/detailed-report', summary="Generate detailed analysis report", response_description="Comprehensive report with recommendations", tags=["Analysis"])
+async def generate_detailed_report(
+    data: Dict[str, Any] = Body(..., description="EEG data to analyze"),
+    save_report: bool = Query(False, description="Whether to save the report to a file")
 ):
-    """Get recommendations based on previous analysis"""
+    """Generate a detailed analysis report with comprehensive recommendations"""
     try:
-        # Add recommendation logic here
+        report = ml_processor.generate_detailed_report(
+            data,
+            subject_id=data.get('subject_id', 'anonymous'),
+            session_id=data.get('session_id', 'session_1'),
+            save_report=save_report
+        )
+        return report
+    except Exception as e:
+        logger.error(f"Error generating detailed report: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post('/recommendations', summary="Get personalized recommendations", response_description="NLP-based recommendations", tags=["Analysis"])
+async def get_recommendations(
+    state_durations: Dict[int, float] = Body(..., description="State durations mapping"),
+    total_duration: float = Body(..., description="Total session duration"),
+    confidence: float = Body(..., description="Prediction confidence"),
+    cognitive_metrics: Optional[Dict[str, float]] = Body(None, description="Cognitive metrics"),
+    state_transitions: int = Body(0, description="Number of state transitions"),
+    max_recommendations: int = Query(5, description="Maximum number of recommendations")
+):
+    """Get personalized recommendations based on EEG analysis"""
+    try:
+        from utils.nlp_recommendations import get_recommendations
+        
+        recommendations = get_recommendations(
+            state_durations=state_durations,
+            total_duration=total_duration,
+            confidence=confidence,
+            cognitive_metrics=cognitive_metrics,
+            state_transitions=state_transitions,
+            max_recommendations=max_recommendations
+        )
+        
         return {
-            "session_id": session_id,
-            "subject_id": subject_id,
-            "recommendations": []
+            "recommendations": recommendations,
+            "count": len(recommendations),
+            "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         logger.error(f"Error getting recommendations: {str(e)}")
