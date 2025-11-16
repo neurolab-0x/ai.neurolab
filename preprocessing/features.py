@@ -362,10 +362,39 @@ def extract_features(df: pd.DataFrame) -> pd.DataFrame:
         raise FeatureExtractionError(f"Error in feature extraction: {str(e)}")
 
 
+def segment_into_epochs(df: pd.DataFrame, epoch_length_samples: int = 257, overlap: float = 0.0) -> List[pd.DataFrame]:
+    """
+    Segment continuous EEG data into fixed-length epochs.
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Continuous EEG data (rows=timepoints, columns=channels)
+    epoch_length_samples : int
+        Number of samples per epoch (default 257 = 1.028s at 250Hz)
+    overlap : float
+        Overlap between epochs as fraction (0.0 = no overlap, 0.5 = 50% overlap)
+        
+    Returns:
+    --------
+    List[pd.DataFrame]
+        List of epoch dataframes
+    """
+    epochs = []
+    step_size = int(epoch_length_samples * (1 - overlap))
+    
+    for start_idx in range(0, len(df) - epoch_length_samples + 1, step_size):
+        end_idx = start_idx + epoch_length_samples
+        epoch = df.iloc[start_idx:end_idx].copy()
+        epochs.append(epoch)
+    
+    logger.info(f"Segmented {len(df)} samples into {len(epochs)} epochs of {epoch_length_samples} samples each")
+    return epochs
+
 def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str]) -> pd.DataFrame:
     """
     Extract features from raw time-series EEG data.
-    Processes entire signal for each channel.
+    Automatically segments long recordings into epochs and processes each separately.
     
     Parameters:
     -----------
@@ -377,7 +406,51 @@ def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str]) 
     Returns:
     --------
     pd.DataFrame
-        Single-row DataFrame with extracted features
+        DataFrame with one row per epoch containing extracted features
+    """
+    try:
+        # Segment into epochs if data is long enough
+        epoch_length = 257  # 1.028s at 250Hz
+        
+        if len(df) >= epoch_length:
+            epochs = segment_into_epochs(df, epoch_length_samples=epoch_length, overlap=0.0)
+            logger.info(f"Processing {len(epochs)} epochs...")
+            
+            # Process each epoch
+            all_epoch_features = []
+            for epoch_idx, epoch_df in enumerate(epochs):
+                epoch_features = extract_features_from_single_epoch(epoch_df, eeg_channels)
+                all_epoch_features.append(epoch_features)
+            
+            # Combine all epochs into a single dataframe
+            features_df = pd.DataFrame(all_epoch_features)
+            logger.info(f"Extracted features from {len(features_df)} epochs, shape: {features_df.shape}")
+            return features_df
+        else:
+            # Data too short for epochs, process as single sample
+            logger.warning(f"Data too short ({len(df)} samples) for epoch segmentation, processing as single sample")
+            epoch_features = extract_features_from_single_epoch(df, eeg_channels)
+            return pd.DataFrame([epoch_features])
+            
+    except Exception as e:
+        logger.error(f"Error in feature extraction from timeseries: {str(e)}")
+        raise FeatureExtractionError(f"Error in feature extraction from timeseries: {str(e)}")
+
+def extract_features_from_single_epoch(df: pd.DataFrame, eeg_channels: List[str]) -> Dict[str, float]:
+    """
+    Extract features from a single epoch of EEG data.
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Single epoch DataFrame (rows=timepoints, columns=channels)
+    eeg_channels : List[str]
+        List of EEG channel names
+        
+    Returns:
+    --------
+    Dict[str, float]
+        Dictionary of extracted features
     """
     try:
         def process_channel(channel_data: np.ndarray, col_name: str) -> Dict[str, float]:
@@ -418,10 +491,9 @@ def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str]) 
         
         feature_data = {}
         
-        # Process each channel's full time series
+        # Process each channel's time series for this epoch
         for col in eeg_channels:
             channel_signal = df[col].values  # Get entire column as numpy array
-            logger.debug(f"Processing channel {col}: {len(channel_signal)} samples")
             feature_data.update(process_channel(channel_signal, col))
         
         # Multi-channel features
@@ -450,9 +522,9 @@ def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str]) 
             except Exception as e:
                 logger.warning(f"Could not compute PCA features: {str(e)}")
         
-        # Return as single-row DataFrame
-        return pd.DataFrame([feature_data])
+        # Return as dictionary
+        return feature_data
         
     except Exception as e:
-        logger.error(f"Error extracting features from timeseries: {str(e)}")
-        raise FeatureExtractionError(f"Error extracting features from timeseries: {str(e)}")
+        logger.error(f"Error extracting features from single epoch: {str(e)}")
+        raise FeatureExtractionError(f"Error extracting features from single epoch: {str(e)}")

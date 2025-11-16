@@ -15,3 +15,4 @@ processed/*
 logs
 best_model_original.*
 temp
+test_data
