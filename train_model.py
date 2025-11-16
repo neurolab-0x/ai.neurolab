@@ -110,7 +110,7 @@ def main():
     """Main training script"""
     try:
         # Use training data
-        data_path = "test_data/training_eeg.csv"
+        data_path = "train_data/training.csv"
         model_save_path = "processed/trained_model.h5"
         
         logger.info(f"Starting model training with data from {data_path}")
