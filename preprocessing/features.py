@@ -421,8 +421,11 @@ def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str], 
         if len(df) >= epoch_length:
             epochs = segment_into_epochs(df, epoch_length_samples=epoch_length, overlap=0.0)
             logger.info(f"Processing {len(epochs)} epochs...")
+            
+            # Process each epoch
+            all_epoch_features = []
             for epoch_idx, epoch_df in enumerate(epochs):
-                epoch_features = extract_features_from_single_epoch(epoch_df, eeg_channels)
+                epoch_features = extract_features_from_single_epoch(epoch_df, eeg_channels, simple_mode=simple_mode)
                 all_epoch_features.append(epoch_features)
             
             # Combine all epochs into a single dataframe
@@ -432,14 +435,14 @@ def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str], 
         else:
             # Data too short for epochs, process as single sample
             logger.warning(f"Data too short ({len(df)} samples) for epoch segmentation, processing as single sample")
-            epoch_features = extract_features_from_single_epoch(df, eeg_channels)
+            epoch_features = extract_features_from_single_epoch(df, eeg_channels, simple_mode=simple_mode)
             return pd.DataFrame([epoch_features])
             
     except Exception as e:
         logger.error(f"Error in feature extraction from timeseries: {str(e)}")
         raise FeatureExtractionError(f"Error in feature extraction from timeseries: {str(e)}")
 
-def extract_features_from_single_epoch(df: pd.DataFrame, eeg_channels: List[str]) -> Dict[str, float]:
+def extract_features_from_single_epoch(df: pd.DataFrame, eeg_channels: List[str], simple_mode: bool = True) -> Dict[str, float]:
     """
     Extract features from a single epoch of EEG data.
     
@@ -449,6 +452,9 @@ def extract_features_from_single_epoch(df: pd.DataFrame, eeg_channels: List[str]
         Single epoch DataFrame (rows=timepoints, columns=channels)
     eeg_channels : List[str]
         List of EEG channel names
+    simple_mode : bool
+        If True, extract only 5 averaged frequency band features
+        If False, extract comprehensive per-channel feature set
         
     Returns:
     --------
@@ -456,6 +462,42 @@ def extract_features_from_single_epoch(df: pd.DataFrame, eeg_channels: List[str]
         Dictionary of extracted features
     """
     try:
+        if simple_mode:
+            # Simple mode: Extract only 5 core frequency band features averaged across all channels
+            all_band_powers = {'alpha': [], 'beta': [], 'theta': [], 'delta': [], 'gamma': []}
+            
+            for col in eeg_channels:
+                channel_signal = df[col].values
+                try:
+                    freqs, psd = compute_psd(channel_signal, fs=250)
+                    
+                    # Define standard EEG frequency bands
+                    bands = {
+                        'delta': (0.5, 4),
+                        'theta': (4, 8),
+                        'alpha': (8, 13),
+                        'beta': (13, 30),
+                        'gamma': (30, 45)
+                    }
+                    
+                    # Compute band powers for this channel
+                    for band_name, band_range in bands.items():
+                        power = compute_band_power(freqs, psd, band_range)
+                        all_band_powers[band_name].append(power)
+                except Exception as e:
+                    logger.warning(f"Error processing channel {col}: {str(e)}")
+                    # Add zeros if processing fails
+                    for band_name in all_band_powers.keys():
+                        all_band_powers[band_name].append(0)
+            
+            # Average across all channels
+            feature_data = {}
+            for band_name, powers in all_band_powers.items():
+                feature_data[band_name] = np.mean(powers) if powers else 0
+            
+            return feature_data
+        
+        # Complex mode: Extract comprehensive features per channel
         def process_channel(channel_data: np.ndarray, col_name: str) -> Dict[str, float]:
             """Process a single channel's entire time series"""
             features = {}
