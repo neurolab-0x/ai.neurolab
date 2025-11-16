@@ -342,7 +342,32 @@ def preprocess_data(df: pd.DataFrame, target_column: str = 'eeg_state',
                 signal = df_features[col].values
                 metadata['signal_quality'][col] = compute_signal_quality_metrics(signal)
         
-        # Split data
+        # Check if we're in inference mode (no target column)
+        inference_mode = target_column not in df_features.columns
+        
+        if inference_mode:
+            # Inference mode: just prepare features without splitting
+            logger.info("Inference mode detected - skipping train/test split")
+            X_inference = df_features.values
+            
+            # Handle missing values
+            logger.info("Handling missing values...")
+            imputer = SimpleImputer(strategy='constant', fill_value=0)
+            X_inference = imputer.fit_transform(X_inference)
+            metadata['preprocessing_steps'].append('missing_value_imputation')
+            
+            # Scale features
+            logger.info("Scaling features...")
+            scaler = StandardScaler()
+            X_normalized = scaler.fit_transform(X_inference)
+            metadata['preprocessing_steps'].append('feature_scaling')
+            
+            logger.info(f"Preprocessing complete! Inference data shape: {X_normalized.shape}")
+            # Return in format expected by caller (X_train, X_test, y_train, y_test, metadata)
+            # For inference, return X as first element, rest as None
+            return X_normalized, None, None, None, metadata
+        
+        # Training mode: Split data
         X_train, X_test, y_train, y_test = split_data(df_features, target_column)
         logger.info(f"Training set: {X_train.shape}, Test set: {X_test.shape}")
         metadata['preprocessing_steps'].append('data_splitting')
