@@ -320,7 +320,7 @@ def compute_pca_features(signals: np.ndarray, n_components: int = 3) -> Dict[str
         logger.warning(f"Error in PCA feature computation: {str(e)}")
         return {f'pca_var_ratio_{i+1}': 0 for i in range(n_components)}
 
-def extract_features(df: pd.DataFrame) -> pd.DataFrame:
+def extract_features(df: pd.DataFrame, simple_mode: bool = True) -> pd.DataFrame:
     """
     Enhanced feature extraction with advanced EEG-specific features
     
@@ -331,6 +331,9 @@ def extract_features(df: pd.DataFrame) -> pd.DataFrame:
         Can be either:
         - Raw time-series data (rows=timepoints, columns=channels)
         - Pre-computed features (rows=samples, columns=features)
+    simple_mode : bool
+        If True, extract only 5 core frequency band features (alpha, beta, theta, delta, gamma)
+        If False, extract comprehensive 930-feature set
         
     Returns:
     --------
@@ -351,7 +354,7 @@ def extract_features(df: pd.DataFrame) -> pd.DataFrame:
         if is_raw_timeseries:
             logger.info(f"Processing raw time-series data: {len(df)} timepoints, {len(eeg_channels)} channels")
             # Process as time-series: extract features from each channel's full signal
-            return extract_features_from_timeseries(df, eeg_channels)
+            return extract_features_from_timeseries(df, eeg_channels, simple_mode=simple_mode)
         else:
             logger.info(f"Processing pre-computed features: {len(df)} samples")
             # Already features, just return (maybe with some processing)
@@ -391,7 +394,7 @@ def segment_into_epochs(df: pd.DataFrame, epoch_length_samples: int = 257, overl
     logger.info(f"Segmented {len(df)} samples into {len(epochs)} epochs of {epoch_length_samples} samples each")
     return epochs
 
-def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str]) -> pd.DataFrame:
+def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str], simple_mode: bool = True) -> pd.DataFrame:
     """
     Extract features from raw time-series EEG data.
     Automatically segments long recordings into epochs and processes each separately.
@@ -402,6 +405,9 @@ def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str]) 
         DataFrame with rows=timepoints, columns=channels
     eeg_channels : List[str]
         List of EEG channel names
+    simple_mode : bool
+        If True, extract only 5 core frequency band features averaged across channels
+        If False, extract comprehensive per-channel feature set
         
     Returns:
     --------
@@ -415,9 +421,6 @@ def extract_features_from_timeseries(df: pd.DataFrame, eeg_channels: List[str]) 
         if len(df) >= epoch_length:
             epochs = segment_into_epochs(df, epoch_length_samples=epoch_length, overlap=0.0)
             logger.info(f"Processing {len(epochs)} epochs...")
-            
-            # Process each epoch
-            all_epoch_features = []
             for epoch_idx, epoch_df in enumerate(epochs):
                 epoch_features = extract_features_from_single_epoch(epoch_df, eeg_channels)
                 all_epoch_features.append(epoch_features)
