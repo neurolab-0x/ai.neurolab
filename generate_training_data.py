@@ -220,7 +220,7 @@ if __name__ == '__main__':
     
     # Generate training data
     df = generate_training_data(
-        samples_per_state=1000000,
+        samples_per_state=10000,
         include_transitions=True
     )
     
