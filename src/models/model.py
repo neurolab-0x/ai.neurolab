@@ -22,7 +22,7 @@ import time
 import os
 import logging
 from datetime import datetime
-from utils.influxdb_client import InfluxDBManager
+from src.utils.influxdb_client import InfluxDBManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

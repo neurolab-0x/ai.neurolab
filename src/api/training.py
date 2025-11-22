@@ -11,13 +11,13 @@ from pydantic import BaseModel, Field, validator
 import numpy as np
 import pandas as pd
 
-from models.model import train_hybrid_model, evaluate_model, model_comparison
-from api.security import require_admin_role, get_current_user
-from utils.file_handler import validate_file, save_uploaded_file
-from preprocessing.load_data import load_data
-from preprocessing.labeling import label_eeg_states
-from preprocessing.features import extract_features
-from preprocessing.preprocess import preprocess_data
+from src.models.model import train_hybrid_model, evaluate_model, model_comparison
+from src.api.security import require_admin_role, get_current_user
+from src.utils.file_handler import validate_file, save_uploaded_file
+from src.preprocessing.load_data import load_data
+from src.preprocessing.labeling import label_eeg_states
+from src.preprocessing.features import extract_features
+from src.preprocessing.preprocess import preprocess_data
 
 logger = logging.getLogger(__name__)
 

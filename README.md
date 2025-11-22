@@ -1,4 +1,4 @@
-# NeuroLab: EEG Data Analysis and Mental State Classification
+# NeuroLab: EEG & Voice Analysis Platform
 
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Latest-green)
@@ -9,52 +9,88 @@
 - [Features](#features)
 - [System Architecture](#system-architecture)
 - [Installation](#installation)
-- [Usage](#usage)
+- [Quick Start](#quick-start)
 - [API Documentation](#api-documentation)
+- [Voice Processing](#voice-processing)
+- [Model Interpretability](#model-interpretability)
 - [Data Processing Pipeline](#data-processing-pipeline)
-- [Model Training](#model-training)
 - [Contributing](#contributing)
-- [License](#license)
-- [Model Interpretability Features](#model-interpretability-features)
+- [Contact](#contact)
 
 ## 🔭 Overview
 
-NeuroLab is a sophisticated EEG (Electroencephalogram) data analysis platform that leverages machine learning to classify mental states in real-time. The system processes EEG signals to identify various mental states such as stress, calmness, and neutrality, making it valuable for applications in mental health monitoring, neurofeedback, and brain-computer interfaces.
+NeuroLab is a sophisticated multimodal analysis platform that combines EEG (Electroencephalogram) data processing with voice emotion detection to provide comprehensive mental state classification. The system leverages machine learning to identify mental states such as relaxed, focused, and stressed, making it valuable for applications in mental health monitoring, neurofeedback, and brain-computer interfaces.
 
 ## ✨ Features
 
+### Core Capabilities
 - **Real-time EEG Processing**: Stream and analyze EEG data in real-time
-- **Multiple File Format Support**: Compatible with .edf, .bdf, .gdf, and .csv formats
-- **Advanced Signal Processing**: Comprehensive preprocessing and feature extraction pipeline
+- **Voice Emotion Detection**: Analyze audio for emotion and mental state classification
+- **Multimodal Analysis**: Combine EEG and voice data for comprehensive assessment
+- **Multiple File Format Support**: Compatible with .edf, .bdf, .gdf, .csv, and audio formats
+- **Advanced Signal Processing**: Comprehensive preprocessing and feature extraction
 - **Machine Learning Integration**: Hybrid model approach with automated calibration
+- **NLP-based Recommendations**: AI-driven personalized insights and recommendations
 - **RESTful API**: FastAPI-powered endpoints for seamless integration
 - **Scalable Architecture**: Modular design for easy extension and maintenance
-- **Automated Recommendations**: AI-driven insights and recommendations
+
+### Mental State Classification
+- **Relaxed** (State 0): Calm, neutral emotional states
+- **Focused** (State 1): Alert, positive, engaged states
+- **Stressed** (State 2): Anxious, fearful, negative states
 
 ## 🏗 System Architecture
 
 ```
-eeg-ds/
-├── api/                 # API endpoints and routing
-├── config/             # Configuration files
-├── data/               # Raw data storage
-├── models/             # ML model implementations
-├── preprocessing/      # Data preprocessing modules
-├── processed/          # Processed data and trained models
-├── utils/              # Utility functions
-├── main.py            # Application entry point
-└── requirements.txt    # Project dependencies
+neurolab_model/
+├── api/                    # API endpoints and routing
+│   ├── auth.py            # Authentication endpoints
+│   ├── training.py        # Model training endpoints
+│   ├── voice.py           # Voice processing endpoints
+│   └── streaming_endpoint.py
+├── config/                # Configuration files
+│   ├── database.py
+│   └── settings.py
+├── core/                  # Core functionality
+│   ├── config/
+│   ├── data/
+│   ├── ml/
+│   ├── models/
+│   └── services/
+├── preprocessing/         # Data preprocessing modules
+│   ├── features.py
+│   ├── labeling.py
+│   ├── load_data.py
+│   └── preprocess.py
+├── utils/                 # Utility functions
+│   ├── ml_processor.py
+│   ├── nlp_recommendations.py
+│   ├── voice_processor.py
+│   └── model_manager.py
+├── data/                  # Raw data storage
+├── processed/             # Processed data and trained models
+├── main.py               # Application entry point
+├── requirements.txt      # Project dependencies
+└── README.md
 ```
 
 ## 🚀 Installation
 
+### Prerequisites
+- Python 3.8+
+- pip package manager
+- (Optional) MongoDB for data storage
+- (Optional) InfluxDB for time-series data
+
+### Setup Steps
+
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/asimwe1/eeg-ds.git
-   cd eeg-ds
+   git clone https://github.com/neurolab-0x/ai.neurolab.git neurolab_model
+   cd neurolab_model
    ```
 
-2. **Create a Virtual Environment** (Optional but recommended)
+2. **Create a Virtual Environment**
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -65,72 +101,226 @@ eeg-ds/
    pip install -r requirements.txt
    ```
 
-4. **Environment Setup**
+4. **Install Voice Processing Dependencies** (Optional)
+   ```bash
+   pip install transformers torch scipy
+   ```
+
+5. **Environment Setup**
    ```bash
    cp .env.example .env
    # Configure your .env file with appropriate settings
    ```
 
-## 💻 Usage
+## 🎯 Quick Start
 
-### Starting the Server
+### 1. Start the Server
 ```bash
 uvicorn main:app --reload
 ```
+Server will run on: http://localhost:8000
 
-### Processing EEG Data
-```python
-import requests
+### 2. Access API Documentation
+- Interactive docs: http://localhost:8000/docs
+- Alternative docs: http://localhost:8000/redoc
 
-# Upload EEG file for analysis
-files = {'file': open('your_eeg_file.csv', 'rb')}
-response = requests.post('https://model.neurolab.cc/upload', files=files)
+### 3. Test Voice Processing
+```bash
+# Generate test audio files
+python generate_test_audio.py
 
-# Real-time processing
-data = {'eeg_data': your_eeg_data}
-response = requests.post('https://model.neurolab.cc/realtime', json=data)
+# Run test suite
+python test_voice_api.py
 ```
 
 ## 📚 API Documentation
 
-### Endpoints
+### Core Endpoints
 
-- `POST /upload`: Upload and process EEG files
+#### Health & Status
+- `GET /health` - System health check and diagnostics
+- `GET /` - API information and available endpoints
+
+#### EEG Analysis
+- `POST /upload` - Upload and process EEG files
   - Supports files up to 500MB
-  - Returns processed results and analysis
+  - Returns mental state classification and analysis
+  
+- `POST /analyze` - Analyze EEG data
+  - Real-time EEG data processing
+  - Returns mental state, confidence, and metrics
 
-- `POST /realtime`: Real-time EEG data processing
-  - Accepts streaming EEG data
-  - Returns immediate analysis results
+- `POST /detailed-report` - Generate comprehensive analysis report
+  - Includes cognitive metrics
+  - Provides NLP-based recommendations
+  - Optional report saving
 
-- `POST /retrain`: Retrain the model with new data
-  - Requires authenticated access
-  - Returns training metrics
+#### Recommendations
+- `POST /recommendations` - Get personalized recommendations
+  - Based on mental state analysis
+  - NLP-powered insights
+  - Customizable recommendation count
 
-- `GET /health`: System health check
-  - Monitors system status
-  - Returns service metrics
+#### Model Management
+- `POST /calibrate` - Calibrate model with new data
+- `POST /train` - Train model with custom dataset (requires auth)
+
+## 🎤 Voice Processing
+
+### Overview
+The voice processing module analyzes audio for emotion detection and maps emotions to mental states compatible with EEG analysis.
+
+### Supported Emotions
+- **Angry** → Stressed (State 2)
+- **Fear** → Stressed (State 2)
+- **Sad** → Stressed (State 2)
+- **Neutral** → Relaxed (State 0)
+- **Calm** → Relaxed (State 0)
+- **Happy** → Focused (State 1)
+- **Surprise** → Focused (State 1)
+
+### Voice API Endpoints
+
+#### Health Check
+```bash
+GET /voice/health
+```
+Check if voice processor is initialized and ready.
+
+#### Get Supported Emotions
+```bash
+GET /voice/emotions
+```
+List all supported emotions and their mental state mappings.
+
+#### Analyze Audio File
+```bash
+POST /voice/analyze
+```
+Upload and analyze an audio file for emotion detection.
+
+**Example:**
+```python
+import requests
+
+with open('audio.wav', 'rb') as f:
+    files = {'file': ('audio.wav', f, 'audio/wav')}
+    response = requests.post('http://localhost:8000/voice/analyze', files=files)
+    result = response.json()
+    
+print(f"Emotion: {result['data']['emotion']}")
+print(f"Mental State: {result['data']['mental_state']}")
+print(f"Confidence: {result['data']['confidence']}")
+```
+
+#### Batch Analysis
+```bash
+POST /voice/analyze-batch
+```
+Analyze multiple audio files with pattern analysis.
+
+**Features:**
+- Process up to 50 files simultaneously
+- Aggregate emotion distribution
+- Calculate average mental state
+- Identify dominant emotions
+
+#### Raw Audio Analysis
+```bash
+POST /voice/analyze-raw
+```
+Analyze raw audio data (base64 or bytes array).
+
+**Example:**
+```python
+import base64
+import requests
+
+with open('audio.wav', 'rb') as f:
+    audio_bytes = f.read()
+    audio_base64 = base64.b64encode(audio_bytes).decode()
+
+payload = {
+    "audio_data": {
+        "data": audio_base64,
+        "format": "base64"
+    },
+    "sample_rate": 16000
+}
+
+response = requests.post('http://localhost:8000/voice/analyze-raw', json=payload)
+```
+
+### Multimodal Analysis
+
+Combine EEG and voice data for comprehensive mental state assessment:
+
+```python
+import requests
+
+# Analyze EEG data
+eeg_response = requests.post('http://localhost:8000/analyze', json=eeg_data)
+eeg_state = eeg_response.json()['mental_state']
+
+# Analyze voice data
+with open('audio.wav', 'rb') as f:
+    voice_response = requests.post('http://localhost:8000/voice/analyze', 
+                                   files={'file': f})
+voice_state = voice_response.json()['data']['mental_state']
+
+# Combine results
+combined_state = (eeg_state + voice_state) / 2
+print(f"Combined Mental State: {combined_state}")
+```
+
+## 🔍 Model Interpretability
+
+### SHAP (SHapley Additive exPlanations)
+- Explains model predictions by attributing feature importance
+- Identifies which EEG features contribute most to classifications
+- Available via: `/interpretability/explain?explanation_type=shap`
+
+### LIME (Local Interpretable Model-agnostic Explanations)
+- Provides local explanations for individual predictions
+- Available via: `/interpretability/explain?explanation_type=lime`
+- Can be included in streaming responses with `include_interpretability=true`
+
+### Confidence Calibration
+- Ensures confidence scores accurately reflect true probabilities
+- Methods: temperature scaling, Platt scaling, isotonic regression
+- Available via: `/interpretability/calibrate?method=temperature_scaling`
+
+**Usage Example:**
+```python
+from utils.interpretability import ModelInterpretability
+
+interpreter = ModelInterpretability(model)
+
+# Get SHAP explanations
+shap_results = interpreter.explain_with_shap(X_data)
+
+# Calibrate confidence
+cal_results = interpreter.calibrate_confidence(X_val, y_val, 
+                                               method='temperature_scaling')
+
+# Make predictions with calibrated confidence
+predictions = interpreter.predict_with_calibration(X_test)
+```
 
 ## 🔄 Data Processing Pipeline
 
-1. **Data Loading**
-   - File validation and format checking
-   - Initial data structure verification
+### EEG Processing
+1. **Data Loading** - File validation and format checking
+2. **Preprocessing** - Artifact removal, filtering, normalization
+3. **Feature Extraction** - Temporal, frequency domain, statistical features
+4. **State Classification** - Mental state prediction with confidence scoring
 
-2. **Preprocessing**
-   - Artifact removal
-   - Signal filtering
-   - Normalization
-
-3. **Feature Extraction**
-   - Temporal features
-   - Frequency domain analysis
-   - Statistical measures
-
-4. **State Classification**
-   - Mental state prediction
-   - Confidence scoring
-   - Temporal smoothing
+### Voice Processing
+1. **Audio Loading** - Multiple format support (WAV, MP3, etc.)
+2. **Preprocessing** - Normalization, resampling to 16kHz
+3. **Feature Extraction** - RMS energy, zero-crossing rate, spectral features
+4. **Emotion Detection** - Wav2Vec2-based emotion classification
+5. **State Mapping** - Convert emotions to mental states
 
 ## 🧠 Model Training
 
@@ -142,12 +332,19 @@ response = requests.post('https://model.neurolab.cc/realtime', json=data)
 5. Model calibration
 6. Performance evaluation
 
-### Model Evaluation Metrics
+### Evaluation Metrics
 - Accuracy
 - Precision
 - Recall
 - F1 Score
 - ROC-AUC
+- Confidence calibration metrics
+
+## 📖 Additional Documentation
+
+- [Voice API Documentation](VOICE_API_README.md) - Detailed voice processing API guide
+- [Voice Setup Guide](VOICE_SETUP.md) - Installation and troubleshooting
+- [API Documentation](API_DOCUMENTATION.md) - Complete API reference
 
 ## 🤝 Contributing
 
@@ -163,150 +360,14 @@ We welcome contributions! Please follow these steps:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-
 ## 📞 Contact
 
-AI Model Maintainer - [Mugisha Prosper](mailto:nelsonprox92@gmail.com)
+**AI Model Maintainer**: Mugisha Prosper  
+Email: nelsonprox92@gmail.com
 
-Project Link: [Neurolabs Inc](https://neurolab.cc)
+**Project**: [Neurolabs Inc](https://neurolab.cc)  
+Repository: [GitHub](https://github.com/neurolab-0x/ai.neurolab)
 
-## Model Interpretability Features
+---
 
-The platform now includes comprehensive model interpretability capabilities:
-
-### SHAP (SHapley Additive exPlanations)
-- Explains model predictions by attributing feature importance values
-- Helps understand which EEG features contribute most to each mental state classification
-- Available via API endpoint: `/interpretability/explain?explanation_type=shap`
-
-### LIME (Local Interpretable Model-agnostic Explanations)
-- Provides local explanations for individual predictions
-- Explains specific predictions by approximating the model locally
-- Available via API endpoint: `/interpretability/explain?explanation_type=lime`
-- Can be included in real-time streaming responses with `include_interpretability=true`
-
-### Confidence Calibration
-- Ensures model confidence scores accurately reflect true probabilities
-- Implements temperature scaling, Platt scaling, and isotonic regression methods
-- Available via API endpoint: `/interpretability/calibrate?method=temperature_scaling`
-- Improves reliability of mental state classifications
-
-### Reliability Diagrams
-- Visual representation of model calibration
-- Shows how predicted probabilities match observed frequencies
-- Available via API endpoint: `/interpretability/reliability_diagram`
-
-## Installation
-
-```bash
-# Install core dependencies
-pip install -r requirements.txt
-
-# Install interpretability packages (optional)
-pip install shap lime
-```
-
-## Usage
-
-```python
-from utils.interpretability import ModelInterpretability
-
-# Create interpreter with your model
-interpreter = ModelInterpretability(model)
-
-# Get SHAP explanations
-shap_results = interpreter.explain_with_shap(X_data)
-
-# Get LIME explanations
-lime_results = interpreter.explain_with_lime(X_data, sample_idx=0)
-
-# Calibrate model confidence
-cal_results = interpreter.calibrate_confidence(X_val, y_val, method='temperature_scaling')
-
-# Make predictions with calibrated confidence
-predictions = interpreter.predict_with_calibration(X_test)
-```
-
-# Neurolab AI Model Server
-
-A FastAPI-based server for processing EEG data and detecting neurological events.
-
-## Features
-
-- EEG data storage and retrieval
-- Session management
-- Event detection and storage
-- Real-time data processing
-- RESTful API endpoints
-
-## Prerequisites
-
-- Python 3.8+
-- MongoDB
-- InfluxDB
-
-## Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/neurolab-0x/ai.neurolab.git neurolab_model
-cd neurolab_model
-```
-
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-4. Configure environment variables:
-Create a `.env` file in the root directory with the following variables:
-```env
-MONGODB_URL=mongodb://localhost:27017
-INFLUXDB_URL=http://localhost:8086
-INFLUXDB_TOKEN=your-token-here
-INFLUXDB_ORG=neurolab
-```
-
-## Running the Application
-
-1. Start MongoDB and InfluxDB services
-
-2. Run the application:
-```bash
-python main.py
-```
-
-The server will start at `http://localhost:8000`
-
-## API Documentation
-
-Once the server is running, you can access:
-- Interactive API documentation: `http://localhost:8000/docs`
-- Alternative API documentation: `http://localhost:8000/redoc`
-
-## API Endpoints
-
-### EEG Data
-- `POST /eeg/data` - Store a single EEG data point
-- `POST /eeg/session` - Store a complete EEG session
-- `GET /eeg/session/{session_id}` - Retrieve a session
-- `GET /eeg/data/{session_id}` - Retrieve EEG data for a time range
-
-### Events
-- `POST /events` - Store a detected event
-- `GET /events/{session_id}` - Retrieve events for a time range
-
-## Development
-
-The application uses:
-- FastAPI for the web framework
-- Motor for async MongoDB operations
-- InfluxDB Client for time-series data
-- Pydantic for data validation
+**Built with ❤️ by the NeuroLab Team**

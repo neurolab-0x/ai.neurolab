@@ -7,11 +7,11 @@ from pydantic import BaseModel, Field, validator
 from typing import List, Dict, Any, Optional, Union
 import base64
 
-from api.real_time import process_realtime_data, default_stream_buffer, StreamBuffer
-from utils.security import DataEncryption, validate_eeg_data, sanitize_model_type
-from utils.interpretability import ModelInterpretability
-from api.security import require_user_role, validate_client_identifier
-from config.settings import REAL_TIME_CONFIG, SECURITY_CONFIG
+from src.api.real_time import process_realtime_data, default_stream_buffer, StreamBuffer
+from src.utils.security import DataEncryption, validate_eeg_data, sanitize_model_type
+from src.utils.interpretability import ModelInterpretability
+from src.api.security import require_user_role, validate_client_identifier
+from src.config.settings import REAL_TIME_CONFIG, SECURITY_CONFIG
 
 logger = logging.getLogger(__name__)
 

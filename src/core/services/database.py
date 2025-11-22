@@ -5,9 +5,9 @@ import logging
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import ASYNCHRONOUS
 from motor.motor_asyncio import AsyncIOMotorClient
-from core.config.database import INFLUXDB_CONFIG, MONGODB_CONFIG, SCHEMA_VERSIONS
-from core.models.eeg import EEGDataPoint, EEGSession, EEGFeatures
-from core.models.events import DetectedEvent
+from src.core.config.database import INFLUXDB_CONFIG, MONGODB_CONFIG, SCHEMA_VERSIONS
+from src.core.models.eeg import EEGDataPoint, EEGSession, EEGFeatures
+from src.core.models.events import DetectedEvent
 
 logger = logging.getLogger(__name__)
 

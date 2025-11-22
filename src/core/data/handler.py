@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 import logging
 import json
-from ..models.eeg import EEGDataPoint, EEGSession, EEGFeatures
+from src.core.models.eeg import EEGDataPoint, EEGSession, EEGFeatures
 
 logger = logging.getLogger(__name__)
 

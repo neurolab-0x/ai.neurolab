@@ -1,11 +1,11 @@
 import os
 import pandas as pd
 from fastapi import UploadFile
-from preprocessing.features import extract_features
-from preprocessing.labeling import label_eeg_states
-from preprocessing.load_data import load_data
-from preprocessing.preprocess import preprocess_data
-from models.load_trained_model import load_trained_model
+from src.preprocessing.features import extract_features
+from src.preprocessing.labeling import label_eeg_states
+from src.preprocessing.load_data import load_data
+from src.preprocessing.preprocess import preprocess_data
+from src.models.load_trained_model import load_trained_model
 
 def process_uploaded_file(uploaded_file: UploadFile):
     """Handles uploaded EEG file, processes it, and runs model inference."""

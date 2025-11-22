@@ -26,8 +26,8 @@ from datetime import datetime
 from typing import Dict, Tuple, List, Any
 
 # Import preprocessing modules
-from preprocessing import load_data, extract_features, preprocess_data
-from preprocessing.labeling import label_eeg_states
+from src.preprocessing import load_data, extract_features, preprocess_data
+from src.preprocessing.labeling import label_eeg_states
 
 # Configure logging
 logging.basicConfig(

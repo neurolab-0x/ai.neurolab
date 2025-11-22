@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field, validator
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 
-from utils.security import JWTAuth
-from api.security import require_admin_role, get_current_user
-from config.settings import SECURITY_CONFIG
+from src.utils.security import JWTAuth
+from src.api.security import require_admin_role, get_current_user
+from src.config.settings import SECURITY_CONFIG
 
 logger = logging.getLogger(__name__)
 

@@ -7,9 +7,9 @@ from sklearn.feature_selection import SelectKBest, f_classif, mutual_info_classi
 from sklearn.ensemble import RandomForestClassifier
 from imblearn.over_sampling import SMOTE, ADASYN
 from collections import Counter
-from preprocessing.features import extract_features
-from utils.artifacts import clean_eeg
-from utils.filters import apply_eeg_preprocessing, filter_eeg_bands
+from src.preprocessing.features import extract_features
+from src.utils.artifacts import clean_eeg
+from src.utils.filters import apply_eeg_preprocessing, filter_eeg_bands
 import logging
 from typing import Tuple, Optional, Dict, Any, List
 from concurrent.futures import ThreadPoolExecutor

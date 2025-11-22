@@ -3,15 +3,15 @@ import logging
 import time
 from collections import deque
 from threading import Lock
-from preprocessing.preprocess import preprocess_data
-from preprocessing.features import extract_features
-from utils.model_loading import load_calibrated_model
-from utils.temporal_processing import temporal_smoothing
-from utils.artifacts import clean_eeg
-from utils.filters import apply_eeg_preprocessing
-from config.settings import PROCESSING_CONFIG
-from utils.data_handler import DataHandler, EEGDataPoint
-from utils.explanation_generator import ExplanationGenerator
+from src.preprocessing.preprocess import preprocess_data
+from src.preprocessing.features import extract_features
+from src.utils.model_loading import load_calibrated_model
+from src.utils.temporal_processing import temporal_smoothing
+from src.utils.artifacts import clean_eeg
+from src.utils.filters import apply_eeg_preprocessing
+from src.config.settings import PROCESSING_CONFIG
+from src.utils.data_handler import DataHandler, EEGDataPoint
+from src.utils.explanation_generator import ExplanationGenerator
 from typing import Dict, Any
 
 logger = logging.getLogger(__name__)

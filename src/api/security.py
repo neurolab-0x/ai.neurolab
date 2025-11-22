@@ -4,8 +4,8 @@ from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Dict, List, Optional, Union, Any
 
-from utils.security import JWTAuth, validate_client_id, check_rate_limit
-from config.settings import SECURITY_CONFIG
+from src.utils.security import JWTAuth, validate_client_id, check_rate_limit
+from src.config.settings import SECURITY_CONFIG
 
 logger = logging.getLogger(__name__)
 
