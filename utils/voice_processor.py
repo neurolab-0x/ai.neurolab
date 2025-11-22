@@ -204,4 +204,86 @@ class VoiceProcessor:
                 tmp_path = tmp_file.name
             
             try:
-          
+                waveform, sr = torchaudio.load(tmp_path)
+                audio_array = waveform.numpy()[0]  # Take first channel
+                return audio_array, sr
+            finally:
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+                    
+        except Exception as e:
+            logger.warning(f"Error loading with torchaudio: {str(e)}")
+            
+            # Fallback: assume raw PCM data
+            if sample_rate is None:
+                sample_rate = self.sample_rate
+            
+            audio_array = np.frombuffer(audio_data, dtype=np.int16)
+            return audio_array, sample_rate
+    
+    def _extract_audio_features(self, audio: np.ndarray) -> Dict[str, float]:
+        """Extract basic audio features"""
+        try:
+            features = {
+                'rms_energy': float(np.sqrt(np.mean(audio**2))),
+                'zero_crossing_rate': float(np.mean(np.abs(np.diff(np.sign(audio))) / 2)),
+                'mean_amplitude': float(np.mean(np.abs(audio))),
+                'max_amplitude': float(np.max(np.abs(audio))),
+                'duration': len(audio) / self.sample_rate
+            }
+            
+            # Spectral features if possible
+            try:
+                fft = np.fft.rfft(audio)
+                magnitude = np.abs(fft)
+                features['spectral_centroid'] = float(np.sum(magnitude * np.arange(len(magnitude))) / np.sum(magnitude))
+                features['spectral_rolloff'] = float(np.percentile(magnitude, 85))
+            except:
+                pass
+            
+            return features
+            
+        except Exception as e:
+            logger.error(f"Error extracting features: {str(e)}")
+            return {}
+    
+    def analyze_speech_patterns(self, audio_segments: List[np.ndarray]) -> Dict[str, Any]:
+        """
+        Analyze patterns across multiple audio segments
+        
+        Args:
+            audio_segments: List of audio arrays
+            
+        Returns:
+            Analysis results including trends and patterns
+        """
+        if not audio_segments:
+            return {'error': 'No audio segments provided'}
+        
+        emotions = []
+        confidences = []
+        states = []
+        
+        for segment in audio_segments:
+            emotion, confidence, _ = self._predict_emotion(segment)
+            emotions.append(emotion)
+            confidences.append(confidence)
+            states.append(self.emotion_to_state.get(emotion, 0))
+        
+        # Calculate statistics
+        from collections import Counter
+        emotion_counts = Counter(emotions)
+        
+        analysis = {
+            'total_segments': len(audio_segments),
+            'dominant_emotion': emotion_counts.most_common(1)[0][0] if emotion_counts else 'neutral',
+            'emotion_distribution': dict(emotion_counts),
+            'average_confidence': float(np.mean(confidences)),
+            'average_mental_state': float(np.mean(states)),
+            'state_variability': float(np.std(states)),
+            'emotions': emotions,
+            'confidences': confidences,
+            'mental_states': states
+        }
+        
+        return analysis
