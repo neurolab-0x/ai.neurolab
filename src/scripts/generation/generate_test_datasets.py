@@ -129,7 +129,7 @@ def generate_test_dataset(state='relaxed', num_epochs=50, duration_sec=1.028,
     print(f"  - {num_epochs} epochs × {int(duration_sec * sampling_rate)} samples = {num_epochs * int(duration_sec * sampling_rate)} total samples")
     return filename
 
-def generate_mixed_state_dataset(num_epochs_per_state=30, output_dir='test_data'):
+def generate_mixed_state_dataset(num_epochs_per_state=30, output_dir='data/testing_data'):
     """
     Generate a dataset with mixed mental states for comprehensive testing.
     """
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print()
     print("Test these files with your API:")
-    print("  - test_data/test_relaxed_50epochs.csv")
-    print("  - test_data/test_focused_50epochs.csv")
-    print("  - test_data/test_stressed_50epochs.csv")
-    print("  - test_data/test_mixed_states.csv")
+    print("  - data/testing_data/test_relaxed_50epochs.csv")
+    print("  - data/testing_data/test_focused_50epochs.csv")
+    print("  - data/testing_data/test_stressed_50epochs.csv")
+    print("  - data/testing_data/test_mixed_states.csv")
