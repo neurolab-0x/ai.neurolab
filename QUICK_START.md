@@ -22,7 +22,10 @@ cp .env.example .env
 
 ```bash
 # Generate synthetic training data
-python src/scripts/generation/generate_training_data.py
+python scripts/generate_data.py
+
+# Or directly (from project root):
+python src/scripts/generation/generate_train_datasets.py
 
 # Output: data/train_data/training.csv
 ```
@@ -30,7 +33,10 @@ python src/scripts/generation/generate_training_data.py
 ## Train Model
 
 ```bash
-# Train the model
+# Train the model (recommended)
+python scripts/train_model.py
+
+# Or directly (from project root):
 python src/scripts/training/train_model.py
 
 # Outputs:
@@ -55,7 +61,10 @@ uvicorn main:app --reload
 # Generate test audio files
 python src/scripts/generation/generate_test_audio.py
 
-# Run voice API tests
+# Run voice API tests (recommended)
+python scripts/test_voice.py
+
+# Or directly:
 python src/tests/test_voice_api.py
 ```
 

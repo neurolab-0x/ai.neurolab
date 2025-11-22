@@ -21,12 +21,19 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import logging
 import os
+import sys
 import json
 from datetime import datetime
 from typing import Dict, Tuple, List, Any
 
+# Add project root to path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 # Import preprocessing modules
-from src.preprocessing import load_data, extract_features, preprocess_data
+from src.preprocessing.load_data import load_data
+from src.preprocessing.features import extract_features, preprocess_data
 from src.preprocessing.labeling import label_eeg_states
 
 # Configure logging
@@ -46,7 +53,7 @@ class ImprovedModelTrainer:
     
     def __init__(
         self,
-        model_save_path: str = "model/trained_model_improved.h5",
+        model_save_path: str = "model/trained_model.h5",
         checkpoint_dir: str = "./checkpoints",
         results_dir: str = "./training_results"
     ):
@@ -632,7 +639,7 @@ def main():
     logger.info("=" * 60)
     
     # Configuration
-    DATA_PATH = "./train_data/training.csv"
+    DATA_PATH = "data/training_data/training.csv"
     ARCHITECTURE = "lstm_attention"  # Options: lstm_attention, bidirectional_lstm, cnn_lstm
     EPOCHS = 100
     BATCH_SIZE = 32
