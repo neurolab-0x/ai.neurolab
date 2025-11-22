@@ -27,7 +27,7 @@ python scripts/generate_data.py
 # Or directly (from project root):
 python src/scripts/generation/generate_train_datasets.py
 
-# Output: data/train_data/training.csv
+# Output: data/training_data/training.csv
 ```
 
 ## Train Model

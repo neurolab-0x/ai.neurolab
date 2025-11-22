@@ -67,7 +67,7 @@ python src/scripts/training/train_model.py
 python scripts/generate_data.py
 ```
 - Generates synthetic EEG training data
-- Output: `data/train_data/training.csv`
+- Output: `data/training_data/training.csv`
 - Creates 10,000 samples per state (relaxed, focused, stressed)
 
 ### 2. Train Model

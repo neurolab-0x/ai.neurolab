@@ -8,8 +8,8 @@ import os
 DIRECTORIES = [
     # Data directories
     'data',
-    'data/train_data',
-    'data/test_data',
+    'data/training_data',
+    'data/testing_data',
     'data/raw',
     'data/processed',
     
