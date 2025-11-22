@@ -54,15 +54,27 @@ class VoiceProcessor:
         try:
             from transformers import Wav2Vec2Processor, Wav2Vec2ForSequenceClassification
             
-            model_name = "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
-            logger.info(f"Loading model: {model_name}")
+            # Try multiple model options
+            model_options = [
+                "superb/wav2vec2-base-superb-er",  # Emotion recognition model
+                "facebook/wav2vec2-base",  # Fallback to base model
+            ]
             
-            self.processor = Wav2Vec2Processor.from_pretrained(model_name)
-            self.model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name)
-            self.model.to(self.device)
-            self.model.eval()
+            for model_name in model_options:
+                try:
+                    logger.info(f"Attempting to load model: {model_name}")
+                    self.processor = Wav2Vec2Processor.from_pretrained(model_name)
+                    self.model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name)
+                    self.model.to(self.device)
+                    self.model.eval()
+                    logger.info(f"Voice processing model loaded successfully: {model_name}")
+                    return
+                except Exception as e:
+                    logger.warning(f"Failed to load {model_name}: {str(e)}")
+                    continue
             
-            logger.info("Voice processing models loaded successfully")
+            raise Exception("All model loading attempts failed")
+            
         except Exception as e:
             logger.error(f"Error loading voice models: {str(e)}")
             logger.warning("Voice processor will run in fallback mode")
@@ -197,8 +209,29 @@ class VoiceProcessor:
     
     def _load_audio_from_bytes(self, audio_data: bytes, sample_rate: int = None) -> Tuple[np.ndarray, int]:
         """Load audio from bytes"""
+        # Try multiple methods to load audio
+        
+        # Method 1: Try scipy.io.wavfile (most reliable for WAV files)
         try:
-            # Try using torchaudio
+            from scipy.io import wavfile
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+                tmp_file.write(audio_data)
+                tmp_path = tmp_file.name
+            
+            try:
+                sr, audio_array = wavfile.read(tmp_path)
+                # Convert to mono if stereo
+                if len(audio_array.shape) > 1:
+                    audio_array = audio_array.mean(axis=1)
+                return audio_array, sr
+            finally:
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+        except Exception as e:
+            logger.debug(f"scipy.io.wavfile failed: {str(e)}")
+        
+        # Method 2: Try torchaudio (if FFmpeg is available)
+        try:
             with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
                 tmp_file.write(audio_data)
                 tmp_path = tmp_file.name
@@ -210,16 +243,16 @@ class VoiceProcessor:
             finally:
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
-                    
         except Exception as e:
-            logger.warning(f"Error loading with torchaudio: {str(e)}")
-            
-            # Fallback: assume raw PCM data
-            if sample_rate is None:
-                sample_rate = self.sample_rate
-            
-            audio_array = np.frombuffer(audio_data, dtype=np.int16)
-            return audio_array, sample_rate
+            logger.debug(f"torchaudio failed: {str(e)}")
+        
+        # Method 3: Fallback - assume raw PCM data
+        logger.warning("Using fallback audio loading (raw PCM)")
+        if sample_rate is None:
+            sample_rate = self.sample_rate
+        
+        audio_array = np.frombuffer(audio_data, dtype=np.int16)
+        return audio_array, sample_rate
     
     def _extract_audio_features(self, audio: np.ndarray) -> Dict[str, float]:
         """Extract basic audio features"""

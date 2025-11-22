@@ -136,7 +136,19 @@ def main():
     print("Voice Processing API Test Suite")
     print("=" * 60)
     print("\nMake sure the API server is running on http://localhost:8000")
-    print("Start it with: python main.py")
+    print("Start it with: uvicorn main:app")
+    
+    # Check if server is running
+    try:
+        response = requests.get(f"{BASE_URL}/health", timeout=2)
+        print(f"✓ Server is running")
+    except requests.exceptions.ConnectionError:
+        print("✗ Error: Server is not running!")
+        print("  Start it with: uvicorn main:app")
+        return
+    except Exception as e:
+        print(f"✗ Error connecting to server: {e}")
+        return
     
     # Test health endpoint
     try:
@@ -159,13 +171,22 @@ def main():
             print(f"Error testing audio analysis: {e}")
     else:
         print(f"\n=== Skipping file upload test (no {sample_audio} found) ===")
-        print("To test file upload, place a WAV file named 'test_audio.wav' in this directory")
+        print("Generate test audio with: python generate_test_audio.py")
     
     # Test raw audio analysis
     try:
         test_analyze_raw_audio()
     except Exception as e:
         print(f"Error testing raw audio: {e}")
+    
+    # Test batch analysis if multiple files exist
+    batch_files = [f"test_audio_{i}.wav" for i in range(1, 4)]
+    existing_files = [f for f in batch_files if Path(f).exists()]
+    if len(existing_files) >= 2:
+        try:
+            test_batch_analysis(existing_files)
+        except Exception as e:
+            print(f"Error testing batch analysis: {e}")
     
     print("\n" + "=" * 60)
     print("Test Suite Complete")
