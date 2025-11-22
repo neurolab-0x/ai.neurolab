@@ -1,0 +1,207 @@
+"""
+Voice Processing and Analysis Module
+Uses lightweight Hugging Face models for audio detection and speech analysis
+"""
+
+import logging
+import numpy as np
+import torch
+import torchaudio
+from typing import Dict, Any, Optional, List, Tuple
+from datetime import datetime
+import io
+import tempfile
+import os
+
+logger = logging.getLogger(__name__)
+
+
+class VoiceProcessor:
+    """
+    Voice processor for emotion detection and speech analysis
+    Uses lightweight HuggingFace models for efficient processing
+    """
+    
+    def __init__(self, device: str = None):
+        """
+        Initialize voice processor with models
+        
+        Args:
+            device: Device to run models on ('cpu', 'cuda', or None for auto-detect)
+        """
+        self.device = device if device else ('cuda' if torch.cuda.is_available() else 'cpu')
+        logger.info(f"Initializing VoiceProcessor on device: {self.device}")
+        
+        self.model = None
+        self.processor = None
+        self.sample_rate = 16000  # Standard for wav2vec2
+        
+        # Emotion to mental state mapping
+        self.emotion_to_state = {
+            'angry': 2,      # Stressed
+            'fear': 2,       # Stressed
+            'sad': 2,        # Stressed
+            'neutral': 0,    # Relaxed
+            'calm': 0,       # Relaxed
+            'happy': 1,      # Focused/Positive
+            'surprise': 1    # Focused/Alert
+        }
+        
+        self._load_models()
+    
+    def _load_models(self):
+        """Load emotion recognition model from HuggingFace"""
+        try:
+            from transformers import Wav2Vec2Processor, Wav2Vec2ForSequenceClassification
+            
+            model_name = "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
+            logger.info(f"Loading model: {model_name}")
+            
+            self.processor = Wav2Vec2Processor.from_pretrained(model_name)
+            self.model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name)
+            self.model.to(self.device)
+            self.model.eval()
+            
+            logger.info("Voice processing models loaded successfully")
+        except Exception as e:
+            logger.error(f"Error loading voice models: {str(e)}")
+            logger.warning("Voice processor will run in fallback mode")
+
+    def _normalize_audio(self, audio: np.ndarray) -> np.ndarray:
+        """Normalize audio to [-1, 1] range"""
+        if audio.dtype == np.int16:
+            audio = audio.astype(np.float32) / 32768.0
+        elif audio.dtype == np.int32:
+            audio = audio.astype(np.float32) / 2147483648.0
+        
+        # Normalize to [-1, 1]
+        max_val = np.abs(audio).max()
+        if max_val > 0:
+            audio = audio / max_val
+        
+        return audio
+    
+    def _resample_audio(self, audio: np.ndarray, orig_sr: int, target_sr: int = None) -> np.ndarray:
+        """Resample audio to target sample rate"""
+        if target_sr is None:
+            target_sr = self.sample_rate
+        
+        if orig_sr == target_sr:
+            return audio
+        
+        try:
+            import librosa
+            return librosa.resample(audio, orig_sr=orig_sr, target_sr=target_sr)
+        except ImportError:
+            logger.warning("librosa not available, using simple resampling")
+            # Simple linear interpolation
+            duration = len(audio) / orig_sr
+            target_length = int(duration * target_sr)
+            indices = np.linspace(0, len(audio) - 1, target_length)
+            return np.interp(indices, np.arange(len(audio)), audio)
+    
+    def _predict_emotion(self, audio: np.ndarray) -> Tuple[str, float, Dict[str, float]]:
+        """
+        Predict emotion from audio
+        
+        Args:
+            audio: Audio signal as numpy array
+            
+        Returns:
+            Tuple of (predicted_emotion, confidence, emotion_probabilities)
+        """
+        if self.model is None or self.processor is None:
+            logger.warning("Model not loaded, using fallback emotion detection")
+            return 'neutral', 1.0, {'neutral': 1.0}
+        
+        try:
+            # Process audio
+            inputs = self.processor(audio, sampling_rate=self.sample_rate, return_tensors="pt", padding=True)
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            
+            # Get predictions
+            with torch.no_grad():
+                outputs = self.model(**inputs)
+                logits = outputs.logits
+                probabilities = torch.nn.functional.softmax(logits, dim=-1)
+            
+            # Get emotion labels
+            predicted_id = torch.argmax(probabilities, dim=-1).item()
+            confidence = probabilities[0][predicted_id].item()
+            
+            # Map to emotion labels
+            emotion_labels = ['angry', 'calm', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+            predicted_emotion = emotion_labels[predicted_id] if predicted_id < len(emotion_labels) else 'neutral'
+            
+            # Create probability dict
+            emotion_probs = {label: probabilities[0][i].item() for i, label in enumerate(emotion_labels)}
+            
+            return predicted_emotion, confidence, emotion_probs
+            
+        except Exception as e:
+            logger.error(f"Error predicting emotion: {str(e)}")
+            return 'neutral', 0.5, {'neutral': 1.0}
+    
+    def process_audio(self, audio_data: bytes, sample_rate: int = None) -> Dict[str, Any]:
+        """
+        Process audio data and extract features
+        
+        Args:
+            audio_data: Raw audio bytes
+            sample_rate: Original sample rate (if known)
+            
+        Returns:
+            Dictionary with emotion, mental state, and audio features
+        """
+        try:
+            # Load audio from bytes
+            audio_array, sr = self._load_audio_from_bytes(audio_data, sample_rate)
+            
+            # Normalize audio
+            audio_array = self._normalize_audio(audio_array)
+            
+            # Resample if needed
+            if sr != self.sample_rate:
+                audio_array = self._resample_audio(audio_array, sr, self.sample_rate)
+            
+            # Predict emotion
+            emotion, confidence, emotion_probs = self._predict_emotion(audio_array)
+            
+            # Map to mental state
+            mental_state = self.emotion_to_state.get(emotion, 0)
+            
+            # Extract audio features
+            features = self._extract_audio_features(audio_array)
+            
+            result = {
+                'emotion': emotion,
+                'confidence': confidence,
+                'emotion_probabilities': emotion_probs,
+                'mental_state': mental_state,
+                'features': features,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            logger.info(f"Processed audio: emotion={emotion}, confidence={confidence:.2f}, state={mental_state}")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error processing audio: {str(e)}")
+            return {
+                'emotion': 'neutral',
+                'confidence': 0.0,
+                'mental_state': 0,
+                'error': str(e),
+                'timestamp': datetime.now().isoformat()
+            }
+    
+    def _load_audio_from_bytes(self, audio_data: bytes, sample_rate: int = None) -> Tuple[np.ndarray, int]:
+        """Load audio from bytes"""
+        try:
+            # Try using torchaudio
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+                tmp_file.write(audio_data)
+                tmp_path = tmp_file.name
+            
+            try:
+          
