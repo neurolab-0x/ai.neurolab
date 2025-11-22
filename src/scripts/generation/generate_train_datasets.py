@@ -190,7 +190,7 @@ def generate_training_data(samples_per_state=1000, include_transitions=True):
     return df
 
 
-def save_training_data(df, filename='data/train_data/training.csv'):
+def save_training_data(df, filename='data/training_data/training.csv'):
     """
     Save training data to CSV file.
     

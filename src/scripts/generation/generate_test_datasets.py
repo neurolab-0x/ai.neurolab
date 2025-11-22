@@ -90,7 +90,7 @@ def generate_eeg_signal(duration_sec=1.0, sampling_rate=250, state='relaxed', ch
     return signals
 
 def generate_test_dataset(state='relaxed', num_epochs=50, duration_sec=1.028, 
-                         sampling_rate=250, output_dir='test_data'):
+                         sampling_rate=250, output_dir='data/testing_data'):
     """
     Generate a complete test dataset for a specific mental state.
     

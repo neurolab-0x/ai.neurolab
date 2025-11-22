@@ -16,7 +16,7 @@ except ImportError:
     USE_SCIPY = False
     print("Note: scipy not available, using wave module")
 
-def generate_test_audio(filename="test_audio.wav", duration=2.0, sample_rate=16000):
+def generate_test_audio(filename="data/testing_data/test_audio.wav", duration=2.0, sample_rate=16000):
     """
     Generate a simple test audio file with a sine wave
     
@@ -74,12 +74,12 @@ if __name__ == "__main__":
     print("Generating test audio files...\n")
     
     # Single test file
-    generate_test_audio("test_audio.wav", duration=2.0)
+    generate_test_audio("data/testing_data/test_audio.wav", duration=2.0)
     
     # Multiple files for batch testing
     print("\nGenerating batch test files...")
     for i in range(3):
-        generate_test_audio(f"test_audio_{i+1}.wav", duration=1.5)
+        generate_test_audio(f"data/testing_data/test_audio_{i+1}.wav", duration=1.5)
     
     print("\n✓ All test audio files generated successfully!")
     print("\nYou can now test the voice API with:")
