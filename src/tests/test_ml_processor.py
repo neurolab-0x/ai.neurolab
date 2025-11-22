@@ -3,7 +3,7 @@ Test script for ML Processor integration
 """
 import numpy as np
 import logging
-from utils.ml_processor import MLProcessor
+from src.utils.ml_processor import MLProcessor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

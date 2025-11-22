@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime
-from utils.explanation_generator import ExplanationGenerator, EEGState
+from src.utils.explanation_generator import ExplanationGenerator, EEGState
 
 class TestExplanationGenerator(unittest.TestCase):
     def setUp(self):

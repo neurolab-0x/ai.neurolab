@@ -4,8 +4,8 @@ from datetime import datetime
 import pandas as pd
 import json
 import os
-from utils.data_handler import DataHandler, EEGDataPoint
-from utils.explanation_generator import ExplanationGenerator
+from src.utils.data_handler import DataHandler, EEGDataPoint
+from src.utils.explanation_generator import ExplanationGenerator
 
 class TestDataHandler(unittest.TestCase):
     def setUp(self):
