@@ -52,7 +52,15 @@ def generate_test_audio(filename="test_audio.wav", duration=2.0, sample_rate=160
     audio_int16 = (signal * 32767).astype(np.int16)
     
     # Save as WAV file
-    wavfile.write(filename, sample_rate, audio_int16)
+    if USE_SCIPY:
+        wavfile.write(filename, sample_rate, audio_int16)
+    else:
+        # Use wave module
+        with wave.open(filename, 'w') as wav_file:
+            wav_file.setnchannels(1)  # Mono
+            wav_file.setsampwidth(2)  # 2 bytes (16-bit)
+            wav_file.setframerate(sample_rate)
+            wav_file.writeframes(audio_int16.tobytes())
     
     print(f"✓ Generated test audio file: {filename}")
     print(f"  Duration: {duration}s")
