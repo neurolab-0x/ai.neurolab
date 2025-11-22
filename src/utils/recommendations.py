@@ -1,4 +1,4 @@
-from config.settings import THRESHOLDS
+from src.config.settings import THRESHOLDS
 
 def generate_recommendations(state_durations, total_duration, confidence):
     """Generate clinical recommendations based on state analysis"""

@@ -46,7 +46,7 @@ class ImprovedModelTrainer:
     
     def __init__(
         self,
-        model_save_path: str = "./processed/trained_model_improved.h5",
+        model_save_path: str = "model/trained_model_improved.h5",
         checkpoint_dir: str = "./checkpoints",
         results_dir: str = "./training_results"
     ):

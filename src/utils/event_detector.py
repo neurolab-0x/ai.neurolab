@@ -3,7 +3,7 @@ import numpy as np
 from datetime import datetime
 import logging
 from dataclasses import dataclass
-from utils.database_service import db_service
+from src.utils.database_service import db_service
 
 logger = logging.getLogger(__name__)
 

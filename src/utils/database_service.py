@@ -5,7 +5,7 @@ import logging
 from influxdb_client import InfluxDBClient, Point
 from influxdb_client.client.write_api import SYNCHRONOUS, ASYNCHRONOUS
 from motor.motor_asyncio import AsyncIOMotorClient
-from config.database import INFLUXDB_CONFIG, MONGODB_CONFIG, SCHEMA_VERSIONS
+from src.config.database import INFLUXDB_CONFIG, MONGODB_CONFIG, SCHEMA_VERSIONS
 
 logger = logging.getLogger(__name__)
 

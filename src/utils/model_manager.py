@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from datetime import datetime
 import tensorflow as tf
-from core.ml.model import load_calibrated_model
+from src.core.ml.model import load_calibrated_model
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from config.settings import PROCESSING_CONFIG
+from src.config.settings import PROCESSING_CONFIG
 
 def calculate_state_durations(states):
     """Calculate time spent in each cognitive state"""

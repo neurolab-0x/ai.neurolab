@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 import logging
 from dataclasses import dataclass
 import numpy as np
-from utils.database_service import db_service
-from utils.event_detector import event_detector, DetectedEvent
+from src.utils.database_service import db_service
+from src.utils.event_detector import event_detector, DetectedEvent
 
 logger = logging.getLogger(__name__)
 

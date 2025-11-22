@@ -2,8 +2,8 @@
 Test script for NLP recommendations integration
 """
 import numpy as np
-from utils.ml_processor import MLProcessor
-from utils.nlp_recommendations import NLPRecommendationEngine
+from src.utils.ml_processor import MLProcessor
+from src.utils.nlp_recommendations import NLPRecommendationEngine
 
 def test_basic_recommendations():
     """Test basic recommendation generation"""

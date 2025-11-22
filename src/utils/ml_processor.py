@@ -5,16 +5,16 @@ from typing import Dict, Any, Optional, Union, List
 from datetime import datetime
 import os
 
-from preprocessing import (
+from src.preprocessing import (
     load_data,
     extract_features,
     preprocess_data
 )
-from preprocessing.labeling import label_eeg_states
-from core.ml.model import load_calibrated_model
-from utils.temporal_processing import temporal_smoothing, calculate_state_durations
-from utils.nlp_recommendations import NLPRecommendationEngine
-from config.settings import PROCESSING_CONFIG, THRESHOLDS
+from src.preprocessing.labeling import label_eeg_states
+from src.core.ml.model import load_calibrated_model
+from src.utils.temporal_processing import temporal_smoothing, calculate_state_durations
+from src.utils.nlp_recommendations import NLPRecommendationEngine
+from src.config.settings import PROCESSING_CONFIG, THRESHOLDS
 
 logger = logging.getLogger(__name__)
 

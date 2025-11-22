@@ -10,14 +10,14 @@ import base64
 import pandas as pd
 
 # Import utility modules
-from utils.file_handler import validate_file, save_uploaded_file
-from utils.model_manager import ModelManager
-from utils.ml_processor import MLProcessor
+from src.utils.file_handler import validate_file, save_uploaded_file
+from src.utils.model_manager import ModelManager
+from src.utils.ml_processor import MLProcessor
 
 # Import API routers
-from api.training import router as training_router
-from api.auth import router as auth_router
-from api.voice import router as voice_router
+from src.api.training import router as training_router
+from src.api.auth import router as auth_router
+from src.api.voice import router as voice_router
 
 # Configure logging
 logging.basicConfig(
@@ -32,7 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger("NeuroLabAPI")
 
 try:
-    from api.streaming_endpoint import router as streaming_router
+    from src.api.streaming_endpoint import router as streaming_router
     STREAMING_AVAILABLE = True
 except ImportError:
     STREAMING_AVAILABLE = False
@@ -209,7 +209,7 @@ async def get_recommendations(
 ):
     """Get personalized recommendations based on EEG analysis"""
     try:
-        from utils.nlp_recommendations import get_recommendations
+        from src.utils.nlp_recommendations import get_recommendations
         
         recommendations = get_recommendations(
             state_durations=state_durations,
