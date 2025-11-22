@@ -17,6 +17,7 @@ from utils.ml_processor import MLProcessor
 # Import API routers
 from api.training import router as training_router
 from api.auth import router as auth_router
+from api.voice import router as voice_router
 
 # Configure logging
 logging.basicConfig(
@@ -68,6 +69,7 @@ app.add_middleware(
 # Include API routers
 app.include_router(training_router, tags=["Training"])
 app.include_router(auth_router, tags=["Authentication"])
+app.include_router(voice_router, tags=["Voice Analysis"])
 if STREAMING_AVAILABLE:
     app.include_router(streaming_router, tags=["Streaming"])
 
@@ -105,7 +107,9 @@ async def root():
             "analyze": "/analyze",
             "detailed_report": "/detailed-report",
             "recommendations": "/recommendations",
-            "calibrate": "/calibrate"
+            "calibrate": "/calibrate",
+            "voice_analyze": "/voice/analyze",
+            "voice_health": "/voice/health"
         },
         "features": [
             "Real-time EEG analysis",
@@ -113,7 +117,8 @@ async def root():
             "NLP-based personalized recommendations",
             "Cognitive metrics calculation",
             "Wellness scoring",
-            "Detailed reporting with insights"
+            "Detailed reporting with insights",
+            "Voice emotion detection and analysis"
         ]
     }
 
