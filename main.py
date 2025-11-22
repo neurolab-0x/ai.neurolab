@@ -32,7 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger("NeuroLabAPI")
 
 try:
-    from src.api.streaming_endpoint import router as streaming_router
+    from src.api.real_time import router as streaming_router
     STREAMING_AVAILABLE = True
 except ImportError:
     STREAMING_AVAILABLE = False

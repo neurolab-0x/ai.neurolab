@@ -12,6 +12,9 @@ processed/*
 logs
 best_model_original.*
 temp
-test_data
+testing_data
+training_data
 venv
 __pycache__
+training_results/*
+checkpoints/*
