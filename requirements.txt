@@ -106,6 +106,6 @@ safety>=3.0.0
 # ============================================
 # Uncomment if using these features
 # streamlit>=1.30.0  # For web dashboards
-# torch>=2.1.0  # For PyTorch models
+torch>=2.1.0  # For PyTorch models
 # transformers>=4.36.0  # For transformer models
 # biosignalsnotebooks>=0.6.7  # For BDF file support
