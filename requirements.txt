@@ -34,7 +34,7 @@ python-dateutil>=2.8.2
 # ============================================
 # Machine Learning and Deep Learning
 # ============================================
-scikit-learn==1.4.2
+scikit-learn==1.5.0
 imbalanced-learn==0.12.3
 tensorflow>=2.16.1
 keras>=3.0.0
