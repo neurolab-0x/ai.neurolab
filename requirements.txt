@@ -5,11 +5,11 @@
 # ============================================
 # Core Web Framework and Server
 # ============================================
-fastapi==0.109.2
-uvicorn[standard]==0.27.1
-pydantic==2.6.1
-pydantic-settings==2.0.0
-python-multipart==0.0.18
+fastapi>=0.115.2
+uvicorn[standard]>=0.30.0
+pydantic>=2.10.0
+pydantic-settings>=2.6.0
+python-multipart>=0.0.18
 python-dotenv==1.0.1
 
 # ============================================
@@ -60,4 +60,7 @@ pytest==7.4.0
 pytest-asyncio==0.21.0
 pytest-cov==4.1.0
 
+# ============================================
+# PyTorch for Voice Processing
+# ============================================
 torch==2.8.0
