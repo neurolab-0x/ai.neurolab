@@ -10,6 +10,7 @@
 - [System Architecture](#system-architecture)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Hugging Face Deployment](#-hugging-face-deployment)
 - [API Documentation](#api-documentation)
 - [Voice Processing](#voice-processing)
 - [Model Interpretability](#model-interpretability)
@@ -163,6 +164,62 @@ eeg_data = {
 
 response = requests.post('http://localhost:8000/analyze', json=eeg_data)
 print(response.json())
+```
+
+## 🚀 Hugging Face Deployment
+
+Deploy NeuroLab to Hugging Face Spaces for easy testing and API access.
+
+### Quick Deploy
+
+**1. Install Hugging Face CLI:**
+```bash
+pip install huggingface_hub
+huggingface-cli login
+```
+
+**2. Prepare deployment:**
+```bash
+python scripts/prepare_hf_space.py
+```
+
+**3. Create and deploy Space:**
+```bash
+cd neurolab-hf-space
+git init
+git add .
+git commit -m "Deploy NeuroLab"
+git remote add origin https://huggingface.co/spaces/YOUR_USERNAME/neurolab-eeg-analysis
+git push -u origin main
+```
+
+**4. Access your Space:**
+```
+https://huggingface.co/spaces/YOUR_USERNAME/neurolab-eeg-analysis
+```
+
+### Deployment Options
+
+- **Gradio Space**: Interactive web interface (recommended for testing)
+- **Docker Space**: Full FastAPI backend with all endpoints
+- **Model Hub**: Upload trained models for inference
+
+### Documentation
+
+- 📖 [Quick Start Guide](docs/QUICKSTART_HF.md) - Fast deployment in minutes
+- 📚 [Full Deployment Guide](docs/HUGGINGFACE_DEPLOYMENT.md) - Comprehensive instructions
+- 🔄 [GitHub Actions](.github/workflows/deploy-hf.yml) - Automated deployment
+
+### Test Deployed API
+
+```python
+from gradio_client import Client
+
+client = Client("YOUR_USERNAME/neurolab-eeg-analysis")
+result = client.predict(
+    alpha=10.5, beta=15.2, theta=6.3, delta=2.1, gamma=30.5
+)
+print(result)
 ```
 
 ## 📚 API Documentation
