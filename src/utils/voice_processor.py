@@ -102,6 +102,53 @@ class VoiceProcessor:
             indices = np.linspace(0, len(audio) - 1, target_length)
             return np.interp(indices, np.arange(len(audio)), audio)
     
+    def _extract_model_features(self, audio: np.ndarray) -> np.ndarray:
+        """
+        Extract features for model input
+        
+        Args:
+            audio: Audio signal as numpy array
+            
+        Returns:
+            Feature array for model input
+        """
+        try:
+            # Extract basic features for the model
+            features = []
+            
+            # RMS energy
+            rms = np.sqrt(np.mean(audio**2))
+            features.append(rms)
+            
+            # Zero crossing rate
+            zcr = np.mean(np.abs(np.diff(np.sign(audio))) / 2)
+            features.append(zcr)
+            
+            # Spectral features
+            fft = np.fft.rfft(audio)
+            magnitude = np.abs(fft)
+            
+            # Spectral centroid
+            if np.sum(magnitude) > 0:
+                spectral_centroid = np.sum(magnitude * np.arange(len(magnitude))) / np.sum(magnitude)
+            else:
+                spectral_centroid = 0
+            features.append(spectral_centroid)
+            
+            # Spectral rolloff
+            spectral_rolloff = np.percentile(magnitude, 85)
+            features.append(spectral_rolloff)
+            
+            # Mean and max amplitude
+            features.append(np.mean(np.abs(audio)))
+            features.append(np.max(np.abs(audio)))
+            
+            return np.array(features, dtype=np.float32)
+            
+        except Exception as e:
+            logger.error(f"Error extracting model features: {str(e)}")
+            return np.zeros(6, dtype=np.float32)
+    
     def _predict_emotion(self, audio: np.ndarray) -> Tuple[str, float, Dict[str, float]]:
         """
         Predict emotion from audio using rule-based or model-based approach
@@ -126,22 +173,51 @@ class VoiceProcessor:
                 
                 # Get predicted emotion
                 predicted_id = np.argmax(probabilities)
-                confidence = float(probabilities[
-            # Get emotion labels
-            predicted_id = torch.argmax(probabilities, dim=-1).item()
-            confidence = probabilities[0][predicted_id].item()
+                confidence = float(probabilities[predicted_id])
+                predicted_emotion = emotion_labels[predicted_id] if predicted_id < len(emotion_labels) else 'neutral'
+                
+                # Create probability dict
+                emotion_probs = {label: float(probabilities[i]) for i, label in enumerate(emotion_labels)}
+                
+                return predicted_emotion, confidence, emotion_probs
+                
+            except Exception as e:
+                logger.error(f"Error in model prediction: {str(e)}")
+                # Fall through to rule-based approach
+        
+        # Rule-based fallback approach
+        try:
+            features = self._extract_audio_features(audio)
             
-            # Map to emotion labels
-            emotion_labels = ['angry', 'calm', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
-            predicted_emotion = emotion_labels[predicted_id] if predicted_id < len(emotion_labels) else 'neutral'
+            # Simple rule-based classification based on audio features
+            rms = features.get('rms_energy', 0)
+            zcr = features.get('zero_crossing_rate', 0)
             
-            # Create probability dict
-            emotion_probs = {label: probabilities[0][i].item() for i, label in enumerate(emotion_labels)}
+            # Classify based on energy and zero-crossing rate
+            if rms > 0.3 and zcr > 0.15:
+                emotion = 'angry'
+                confidence = 0.6
+            elif rms < 0.1 and zcr < 0.05:
+                emotion = 'calm'
+                confidence = 0.6
+            elif rms > 0.25 and zcr < 0.1:
+                emotion = 'happy'
+                confidence = 0.55
+            elif rms < 0.15 and zcr > 0.1:
+                emotion = 'sad'
+                confidence = 0.55
+            else:
+                emotion = 'neutral'
+                confidence = 0.5
             
-            return predicted_emotion, confidence, emotion_probs
+            # Create probability dict with simple distribution
+            emotion_probs = {label: 0.1 for label in emotion_labels}
+            emotion_probs[emotion] = confidence
+            
+            return emotion, confidence, emotion_probs
             
         except Exception as e:
-            logger.error(f"Error predicting emotion: {str(e)}")
+            logger.error(f"Error in rule-based prediction: {str(e)}")
             return 'neutral', 0.5, {'neutral': 1.0}
     
     def process_audio(self, audio_data: bytes, sample_rate: int = None) -> Dict[str, Any]:
@@ -220,21 +296,24 @@ class VoiceProcessor:
         except Exception as e:
             logger.debug(f"scipy.io.wavfile failed: {str(e)}")
         
-        # Method 2: Try torchaudio (if FFmpeg is available)
+        # Method 2: Try using soundfile if available
         try:
+            import soundfile as sf
             with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
                 tmp_file.write(audio_data)
                 tmp_path = tmp_file.name
             
             try:
-                waveform, sr = torchaudio.load(tmp_path)
-                audio_array = waveform.numpy()[0]  # Take first channel
+                audio_array, sr = sf.read(tmp_path)
+                # Convert to mono if stereo
+                if len(audio_array.shape) > 1:
+                    audio_array = audio_array.mean(axis=1)
                 return audio_array, sr
             finally:
                 if os.path.exists(tmp_path):
                     os.unlink(tmp_path)
         except Exception as e:
-            logger.debug(f"torchaudio failed: {str(e)}")
+            logger.debug(f"soundfile failed: {str(e)}")
         
         # Method 3: Fallback - assume raw PCM data
         logger.warning("Using fallback audio loading (raw PCM)")
@@ -259,7 +338,10 @@ class VoiceProcessor:
             try:
                 fft = np.fft.rfft(audio)
                 magnitude = np.abs(fft)
-                features['spectral_centroid'] = float(np.sum(magnitude * np.arange(len(magnitude))) / np.sum(magnitude))
+                if np.sum(magnitude) > 0:
+                    features['spectral_centroid'] = float(np.sum(magnitude * np.arange(len(magnitude))) / np.sum(magnitude))
+                else:
+                    features['spectral_centroid'] = 0.0
                 features['spectral_rolloff'] = float(np.percentile(magnitude, 85))
             except:
                 pass
