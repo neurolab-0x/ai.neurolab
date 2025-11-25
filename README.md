@@ -25,13 +25,14 @@ NeuroLab is a sophisticated multimodal analysis platform that combines EEG (Elec
 
 ### Core Capabilities
 - **Real-time EEG Processing**: Stream and analyze EEG data in real-time
-- **Voice Emotion Detection**: Analyze audio for emotion and mental state classification
+- **Voice Emotion Detection**: TensorFlow-based audio analysis with rule-based fallback
 - **Multimodal Analysis**: Combine EEG and voice data for comprehensive assessment
-- **Multiple File Format Support**: Compatible with .edf, .bdf, .gdf, .csv, and audio formats
+- **Multiple File Format Support**: Compatible with .edf, .bdf, .gdf, .csv, WAV, MP3, and more
 - **Advanced Signal Processing**: Comprehensive preprocessing and feature extraction
-- **Machine Learning Integration**: Hybrid model approach with automated calibration
+- **Machine Learning Integration**: TensorFlow/Keras models with graceful degradation
 - **NLP-based Recommendations**: AI-driven personalized insights and recommendations
 - **RESTful API**: FastAPI-powered endpoints for seamless integration
+- **Interactive Web UI**: Gradio interface for easy testing and demonstration
 - **Scalable Architecture**: Modular design for easy extension and maintenance
 
 ### Mental State Classification
@@ -101,9 +102,9 @@ neurolab_model/
    pip install -r requirements.txt
    ```
 
-4. **Install Voice Processing Dependencies** (Optional)
+4. **Install Additional Audio Libraries** (Recommended for voice processing)
    ```bash
-   pip install transformers torch scipy
+   pip install librosa soundfile
    ```
 
 5. **Environment Setup**
@@ -112,25 +113,56 @@ neurolab_model/
    # Configure your .env file with appropriate settings
    ```
 
+6. **Verify Installation**
+   ```bash
+   python -c "import tensorflow as tf; print(f'TensorFlow: {tf.__version__}')"
+   python -c "import torch; print(f'PyTorch: {torch.__version__}')"
+   ```
+
 ## 🎯 Quick Start
 
-### 1. Start the Server
+### Option 1: FastAPI Server
+
+**Start the API server:**
 ```bash
 uvicorn main:app --reload
 ```
 Server will run on: http://localhost:8000
 
-### 2. Access API Documentation
+**Access API Documentation:**
 - Interactive docs: http://localhost:8000/docs
 - Alternative docs: http://localhost:8000/redoc
 
-### 3. Test Voice Processing
-```bash
-# Generate test audio files
-python generate_test_audio.py
+### Option 2: Gradio Web Interface
 
-# Run test suite
-python test_voice_api.py
+**Launch the interactive web UI:**
+```bash
+python gradio_app.py
+```
+Interface will run on: http://localhost:7860
+
+**Features:**
+- 📝 Manual EEG input with sliders
+- 🎲 Sample data generation and testing
+- 📁 CSV file upload and analysis
+- ℹ️ Model information and status
+
+### 3. Quick API Test
+
+**Test EEG Analysis:**
+```python
+import requests
+
+eeg_data = {
+    "alpha": 10.5,
+    "beta": 15.2,
+    "theta": 6.3,
+    "delta": 2.1,
+    "gamma": 30.5
+}
+
+response = requests.post('http://localhost:8000/analyze', json=eeg_data)
+print(response.json())
 ```
 
 ## 📚 API Documentation
@@ -316,11 +348,11 @@ predictions = interpreter.predict_with_calibration(X_test)
 4. **State Classification** - Mental state prediction with confidence scoring
 
 ### Voice Processing
-1. **Audio Loading** - Multiple format support (WAV, MP3, etc.)
+1. **Audio Loading** - Multiple format support (WAV, MP3, etc.) using scipy, soundfile, or fallback methods
 2. **Preprocessing** - Normalization, resampling to 16kHz
-3. **Feature Extraction** - RMS energy, zero-crossing rate, spectral features
-4. **Emotion Detection** - Wav2Vec2-based emotion classification
-5. **State Mapping** - Convert emotions to mental states
+3. **Feature Extraction** - RMS energy, zero-crossing rate, spectral centroid, spectral rolloff
+4. **Emotion Detection** - TensorFlow-based model or rule-based classification fallback
+5. **State Mapping** - Convert emotions to mental states (7 emotions → 3 states)
 
 ## 🧠 Model Training
 
@@ -339,6 +371,78 @@ predictions = interpreter.predict_with_calibration(X_test)
 - F1 Score
 - ROC-AUC
 - Confidence calibration metrics
+
+## 🎨 Gradio Web Interface
+
+NeuroLab includes a user-friendly Gradio interface for easy testing and demonstration.
+
+### Features
+
+**Manual Input Tab:**
+- Interactive sliders for each EEG frequency band
+- Real-time analysis as you adjust values
+- Visual feedback on mental state
+
+**Sample Data Tab:**
+- Pre-generated data for different mental states
+- Quick testing without manual input
+- Demonstrates expected outputs
+
+**CSV Upload Tab:**
+- Upload CSV files with EEG data
+- Automatic processing and analysis
+- Supports multiple rows (uses mean values)
+
+**Model Info Tab:**
+- View model status and configuration
+- Check TensorFlow availability
+- Model architecture details
+
+### Launch Gradio Interface
+
+```bash
+python gradio_app.py
+```
+
+Access at: http://localhost:7860
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**1. TensorFlow GPU not detected:**
+```bash
+# Check GPU availability
+python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
+
+# Install CUDA-enabled TensorFlow if needed
+pip install tensorflow[and-cuda]
+```
+
+**2. Voice processing errors:**
+```bash
+# Install audio processing libraries
+pip install librosa soundfile scipy
+```
+
+**3. Model not found:**
+- Ensure `./processed/trained_model.h5` exists for EEG analysis
+- Ensure `./model/voice_emotion_model.h5` exists for voice processing
+- System will use rule-based fallback if models are missing
+
+**4. Port already in use:**
+```bash
+# Use a different port
+uvicorn main:app --port 8001
+# or for Gradio
+python gradio_app.py  # Edit server_port in the file
+```
+
+**5. Import errors:**
+```bash
+# Reinstall dependencies
+pip install -r requirements.txt --force-reinstall
+```
 
 ## 📖 Additional Documentation
 
