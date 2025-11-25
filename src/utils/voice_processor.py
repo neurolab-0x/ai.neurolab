@@ -1,12 +1,11 @@
 """
 Voice Processing and Analysis Module
-Uses lightweight Hugging Face models for audio detection and speech analysis
+Uses TensorFlow for audio detection and speech analysis
 """
 
 import logging
 import numpy as np
-import torch
-import torchaudio
+import tensorflow as tf
 from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime
 import io
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 class VoiceProcessor:
     """
     Voice processor for emotion detection and speech analysis
-    Uses lightweight HuggingFace models for efficient processing
+    Uses TensorFlow for efficient processing
     """
     
     def __init__(self, device: str = None):
@@ -27,14 +26,16 @@ class VoiceProcessor:
         Initialize voice processor with models
         
         Args:
-            device: Device to run models on ('cpu', 'cuda', or None for auto-detect)
+            device: Device to run models on (not used with TensorFlow, kept for compatibility)
         """
-        self.device = device if device else ('cuda' if torch.cuda.is_available() else 'cpu')
+        # Check GPU availability
+        gpus = tf.config.list_physical_devices('GPU')
+        self.device = 'GPU' if gpus else 'CPU'
         logger.info(f"Initializing VoiceProcessor on device: {self.device}")
         
         self.model = None
         self.processor = None
-        self.sample_rate = 16000  # Standard for wav2vec2
+        self.sample_rate = 16000  # Standard sample rate
         
         # Emotion to mental state mapping
         self.emotion_to_state = {
@@ -50,34 +51,23 @@ class VoiceProcessor:
         self._load_models()
     
     def _load_models(self):
-        """Load emotion recognition model from HuggingFace"""
+        """Load or create emotion recognition model using TensorFlow"""
         try:
-            from transformers import Wav2Vec2Processor, Wav2Vec2ForSequenceClassification
-            
-            # Try multiple model options
-            model_options = [
-                "superb/wav2vec2-base-superb-er",  # Emotion recognition model
-                "facebook/wav2vec2-base",  # Fallback to base model
-            ]
-            
-            for model_name in model_options:
-                try:
-                    logger.info(f"Attempting to load model: {model_name}")
-                    self.processor = Wav2Vec2Processor.from_pretrained(model_name)
-                    self.model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name)
-                    self.model.to(self.device)
-                    self.model.eval()
-                    logger.info(f"Voice processing model loaded successfully: {model_name}")
-                    return
-                except Exception as e:
-                    logger.warning(f"Failed to load {model_name}: {str(e)}")
-                    continue
-            
-            raise Exception("All model loading attempts failed")
+            # Try to load a pre-trained model if available
+            model_path = "./model/voice_emotion_model.h5"
+            if os.path.exists(model_path):
+                logger.info(f"Loading voice model from {model_path}")
+                self.model = tf.keras.models.load_model(model_path)
+                logger.info("Voice processing model loaded successfully")
+            else:
+                logger.warning(f"Voice model not found at {model_path}")
+                logger.info("Voice processor will run in rule-based mode")
+                self.model = None
             
         except Exception as e:
             logger.error(f"Error loading voice models: {str(e)}")
-            logger.warning("Voice processor will run in fallback mode")
+            logger.warning("Voice processor will run in rule-based mode")
+            self.model = None
 
     def _normalize_audio(self, audio: np.ndarray) -> np.ndarray:
         """Normalize audio to [-1, 1] range"""
@@ -114,7 +104,7 @@ class VoiceProcessor:
     
     def _predict_emotion(self, audio: np.ndarray) -> Tuple[str, float, Dict[str, float]]:
         """
-        Predict emotion from audio
+        Predict emotion from audio using rule-based or model-based approach
         
         Args:
             audio: Audio signal as numpy array
@@ -122,21 +112,21 @@ class VoiceProcessor:
         Returns:
             Tuple of (predicted_emotion, confidence, emotion_probabilities)
         """
-        if self.model is None or self.processor is None:
-            logger.warning("Model not loaded, using fallback emotion detection")
-            return 'neutral', 1.0, {'neutral': 1.0}
+        emotion_labels = ['angry', 'calm', 'fear', 'happy', 'neutral', 'sad', 'surprise']
         
-        try:
-            # Process audio
-            inputs = self.processor(audio, sampling_rate=self.sample_rate, return_tensors="pt", padding=True)
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
-            
-            # Get predictions
-            with torch.no_grad():
-                outputs = self.model(**inputs)
-                logits = outputs.logits
-                probabilities = torch.nn.functional.softmax(logits, dim=-1)
-            
+        if self.model is not None:
+            try:
+                # Extract features for model
+                features = self._extract_model_features(audio)
+                features = np.expand_dims(features, axis=0)
+                
+                # Get predictions
+                predictions = self.model.predict(features, verbose=0)
+                probabilities = tf.nn.softmax(predictions[0]).numpy()
+                
+                # Get predicted emotion
+                predicted_id = np.argmax(probabilities)
+                confidence = float(probabilities[
             # Get emotion labels
             predicted_id = torch.argmax(probabilities, dim=-1).item()
             confidence = probabilities[0][predicted_id].item()
