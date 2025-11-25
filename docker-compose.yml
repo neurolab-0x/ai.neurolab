@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: neurolab-api
+    container_name: neurolab_api
     ports:
       - "8000:8000"
     environment:

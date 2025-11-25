@@ -29,7 +29,7 @@ This is the **easiest and recommended** approach for testing your model with a w
 1. Go to [huggingface.co/spaces](https://huggingface.co/spaces)
 2. Click **"Create new Space"**
 3. Fill in the details:
-   - **Space name**: `neurolab-eeg-analysis`
+   - **Space name**: `nlpt_2-preview`
    - **License**: MIT
    - **SDK**: Gradio
    - **Hardware**: CPU (free tier) or GPU (if needed)
@@ -56,8 +56,8 @@ cp -r ../core ./
 cp -r ../preprocessing ./
 
 # Copy model files (if you have trained models)
-mkdir -p processed model
-cp ../processed/trained_model.h5 processed/ 2>/dev/null || echo "No EEG model found"
+mkdir -p model
+cp ../model/trained_model.h5 model/ 2>/dev/null || echo "No EEG model found"
 cp ../model/voice_emotion_model.h5 model/ 2>/dev/null || echo "No voice model found"
 ```
 
@@ -338,7 +338,7 @@ git push -u origin main
 
 Your Space will be available at:
 ```
-https://huggingface.co/spaces/YOUR_USERNAME/neurolab-eeg-analysis
+https://huggingface.co/spaces/neurolab-0x/nlpt_2-preview
 ```
 
 The Space will automatically build and deploy. You can monitor the build logs in the Space's "Logs" tab.
@@ -431,7 +431,7 @@ The model was trained on EEG data with labeled mental states.
   title = {NeuroLab EEG Mental State Classifier},
   year = {2024},
   publisher = {Hugging Face},
-  howpublished = {\url{https://huggingface.co/YOUR_USERNAME/neurolab-eeg-model}}
+  howpublished = {\url{https://huggingface.co/neurolab-0x/nlpt_2-preview}}
 }
 ```
 ```
@@ -446,7 +446,7 @@ pip install huggingface_hub
 huggingface-cli login
 
 # Create repository
-huggingface-cli repo create neurolab-eeg-model --type model
+huggingface-cli repo create nlpt_2-preview --type model
 
 # Initialize git
 git init
@@ -454,7 +454,7 @@ git add .
 git commit -m "Upload NeuroLab EEG model"
 
 # Add remote and push
-git remote add origin https://huggingface.co/YOUR_USERNAME/neurolab-eeg-model
+git remote add origin https://huggingface.co/neurolab-0x/nlpt_2-preview
 git push -u origin main
 ```
 
