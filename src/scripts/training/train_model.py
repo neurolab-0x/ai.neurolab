@@ -655,7 +655,7 @@ def main():
         # Prepare features and labels
         feature_cols = ['alpha', 'beta', 'theta', 'delta', 'gamma']
         X = df[feature_cols].values
-        y = df['label'].values
+        y = df['state'].values
         
         logger.info(f"Data loaded: {X.shape[0]} samples, {X.shape[1]} features")
         logger.info(f"Class distribution: {np.bincount(y)}")
