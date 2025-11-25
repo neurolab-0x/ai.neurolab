@@ -7,7 +7,6 @@ import antropy as ant
 import logging
 from typing import Dict, List, Tuple, Optional
 from concurrent.futures import ThreadPoolExecutor
-import warnings
 from scipy.fft import fft, fftfreq
 from scipy.signal import find_peaks
 import pywt

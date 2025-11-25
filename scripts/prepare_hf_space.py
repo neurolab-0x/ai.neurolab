@@ -9,7 +9,7 @@ def create_hf_space_structure():
     """Create directory structure for Hugging Face Space"""
     
     # Create base directory
-    base_dir = Path("nlpt 2-preview")
+    base_dir = Path("nlpt_2-preview")
     base_dir.mkdir(exist_ok=True)
     
     print(f"📁 Creating Hugging Face Space structure in: {base_dir.absolute()}")
@@ -334,7 +334,7 @@ venv/
     print("3. git add .")
     print('4. git commit -m "Initial commit"')
     print("5. Create a Space on huggingface.co/spaces")
-    print("6. git remote add origin https://huggingface.co/spaces/YOUR_USERNAME/SPACE_NAME")
+    print("6. git remote add origin https://huggingface.co/spaces/neurolab-0x/nlpt_2-preview")
     print("7. git push -u origin main")
     print("\n💡 Or use the Hugging Face CLI:")
     print("   huggingface-cli login")

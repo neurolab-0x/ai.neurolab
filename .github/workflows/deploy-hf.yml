@@ -40,11 +40,11 @@ jobs:
         git init
         git add .
         git commit -m "Auto-deploy from GitHub Actions"
-        git remote add origin https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/$HF_USERNAME/neurolab-eeg-analysis
+        git remote add origin https://neurolab-0x:$HF_TOKEN@huggingface.co/spaces/neurolab-0x/nlpt_2-preview
         git push -f origin main
     
     - name: Notify deployment status
       if: success()
       run: |
         echo "✅ Successfully deployed to Hugging Face Spaces!"
-        echo "🔗 Visit: https://huggingface.co/spaces/${{ secrets.HF_USERNAME }}/neurolab-eeg-analysis"
+        echo "🔗 Visit: https://huggingface.co/spaces/neurolab-0x/nlpt_2-preview"

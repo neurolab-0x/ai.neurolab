@@ -33,7 +33,8 @@ if project_root not in sys.path:
 
 # Import preprocessing modules
 from src.preprocessing.load_data import load_data
-from src.preprocessing.features import extract_features, preprocess_data
+from src.preprocessing.features import extract_features
+from src.preprocessing.preprocess import preprocess_data
 from src.preprocessing.labeling import label_eeg_states
 
 # Configure logging
