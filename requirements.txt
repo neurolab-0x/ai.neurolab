@@ -64,3 +64,5 @@ pytest-cov==4.1.0
 # PyTorch for Voice Processing
 # ============================================
 torch==2.8.0
+
+antropy>=0.1.1
