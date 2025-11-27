@@ -34,15 +34,18 @@ class ModelManager:
             logger.info(f"Initializing model from {self.model_path}")
             if os.path.exists(self.model_path):
                 self.model = load_calibrated_model(self.model_path)
-                self.model.compile(
-                    optimizer='adam',
-                    loss='categorical_crossentropy',
-                    metrics=['accuracy']
-                )
-                # Warm up the model
-                dummy_input = np.zeros((1, *self.model.input_shape[1:]))
-                _ = self.model.predict(dummy_input)
-                logger.info("Model loaded and warmed up")
+                if self.model is not None:
+                    self.model.compile(
+                        optimizer='adam',
+                        loss='categorical_crossentropy',
+                        metrics=['accuracy']
+                    )
+                    # Warm up the model
+                    dummy_input = np.zeros((1, *self.model.input_shape[1:]))
+                    _ = self.model.predict(dummy_input)
+                    logger.info("Model loaded and warmed up")
+                else:
+                    logger.error("Failed to load or create model")
             else:
                 logger.warning(f"Model file not found at {self.model_path}. Running in minimal mode.")
         except Exception as e:
@@ -71,4 +74,4 @@ class ModelManager:
                 logger.error(f"Model health check failed: {str(e)}")
                 status["model_loaded"] = False
         
-        return status 
+        return status
