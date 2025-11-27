@@ -8,7 +8,7 @@ from src.core.ml.model import load_calibrated_model
 logger = logging.getLogger(__name__)
 
 class ModelManager:
-    def __init__(self, model_path: str = "./processed/trained_model.h5"):
+    def __init__(self, model_path: str = "./model/trained_model.h5"):
         self.model_path = model_path
         self.model = None
         self.tensorflow_available = False
