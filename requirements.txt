@@ -29,8 +29,8 @@ scipy==1.12.0
 # Machine Learning and Deep Learning
 # ============================================
 scikit-learn==1.5.0
-tensorflow==2.16.1
-protobuf==4.25.3  # Required for TF 2.16.1 compatibility
+tensorflow==2.15.1
+# protobuf==4.25.3  # Let tensorflow resolve its own protobuf dependency
 joblib==1.3.0
 
 # ============================================
