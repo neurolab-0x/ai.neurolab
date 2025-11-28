@@ -18,7 +18,7 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       - ./data:/app/data
-      - ./processed:/app/processed
+      - ./model:/app/processed
       - ./logs:/app/logs
       - ./test_data:/app/test_data
     depends_on:
